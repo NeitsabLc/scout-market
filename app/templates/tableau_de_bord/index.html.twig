@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil — Scout Market{% endblock %}
+
+{% block body %}
+<main class="page-shell home-dashboard">
+    <header class="page-heading home-dashboard__heading">
+        <div><span class="eyebrow">Scout Market</span><h1>Tableau de bord</h1><p>L’intendance reste disponible toute l’année.</p></div>
+        <time class="home-today" datetime="{{ aujourdhui|date('Y-m-d') }}">
+            <span class="home-today__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/></svg></span>
+            <span><small>Aujourd’hui</small><strong>{{ aujourdhui|date('d/m/Y') }}</strong></span>
+        </time>
+    </header>
+
+    <section class="home-kpis home-kpis--summary" aria-label="Résumé">
+        <a class="home-kpi home-kpi--main" href="{{ path('app_denrees') }}"><strong>{{ nombre_denrees }}</strong><span>denrées actives</span></a>
+        <a class="home-kpi" href="{{ path('app_menus') }}"><strong>{{ nombre_grilles }}</strong><span>grilles de menus</span></a>
+        <a class="home-kpi" href="{{ path('app_mouvements_stock') }}"><strong>{{ stocks|length }}</strong><span>stocks suivis</span></a>
+    </section>
+
+    <section class="home-panel" aria-labelledby="unites-presentes-title">
+        <header class="home-panel__header">
+            <div>
+                <span class="home-panel__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M2 20a6 6 0 0 1 12 0M13 20a5 5 0 0 1 9 0"/></svg></span>
+                <div><h2 id="unites-presentes-title">Unités présentes aujourd’hui</h2><p>Effectifs, allergènes et régimes déclarés pour le {{ aujourdhui|date('d/m/Y') }}</p></div>
+            </div>
+            <a href="{{ path('app_groupes') }}">Voir les unités</a>
+        </header>
+
+        <div class="home-kpis" aria-label="Effectifs présents aujourd’hui">
+            <div class="home-kpi home-kpi--main"><strong>{{ resume_unites.totaux.unites }}</strong><span>unités présentes</span></div>
+            <div class="home-kpi"><strong>{{ resume_unites.totaux.total }}</strong><span>personnes déclarées</span></div>
+            <div class="home-kpi"><strong>{{ resume_unites.totaux.jeunes }}</strong><span>jeunes</span></div>
+            <div class="home-kpi"><strong>{{ resume_unites.totaux.adultes }}</strong><span>adultes</span></div>
+        </div>
+
+        {% if resume_unites.unites is empty %}
+            <p class="home-empty-copy">Aucune unité participante n’est présente aujourd’hui.</p>
+        {% else %}
+            <div class="home-attendance-table" role="table" aria-label="Effectifs et besoins alimentaires par unité">
+                <div class="home-attendance-row home-attendance-row--head" role="row">
+                    <span role="columnheader">Unité</span><span role="columnheader">Jeunes</span><span role="columnheader">Adultes</span><span role="columnheader">Total</span><span role="columnheader">Végétariens</span><span role="columnheader">Sans gluten</span><span role="columnheader">Sans lactose</span>
+                </div>
+                {% for ligne in resume_unites.unites %}
+                    <div class="home-attendance-row" role="row" data-unit-id="{{ ligne.unite.id }}">
+                        <a href="{{ path('app_groupe_modifier', {id: ligne.unite.id}) }}" role="cell">{{ ligne.unite.nom }}</a><span class="home-attendance__young" role="cell">{{ ligne.jeunes }}</span><span class="home-attendance__adults" role="cell">{{ ligne.adultes }}</span><strong class="home-attendance__total" role="cell">{{ ligne.total }}</strong><span class="home-attendance__vegetarians" role="cell">{{ ligne.vegetariens }}</span><span class="home-attendance__gluten-free" role="cell">{{ ligne.sans_gluten }}</span><span class="home-attendance__lactose-free" role="cell">{{ ligne.sans_lactose }}</span>
+                    </div>
+                {% endfor %}
+                <div class="home-attendance-row home-attendance-row--total" role="row">
+                    <strong role="cell">Total général</strong><span role="cell">{{ resume_unites.totaux.jeunes }}</span><span role="cell">{{ resume_unites.totaux.adultes }}</span><strong role="cell">{{ resume_unites.totaux.total }}</strong><span role="cell">{{ resume_unites.totaux.vegetariens }}</span><span role="cell">{{ resume_unites.totaux.sans_gluten }}</span><span role="cell">{{ resume_unites.totaux.sans_lactose }}</span>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="home-panel" aria-labelledby="menus-title">
+        <header class="home-panel__header"><div><h2 id="menus-title">Au menu aujourd’hui</h2><p>{{ aujourdhui|date('d/m/Y') }}</p></div><a href="{{ path('app_menus') }}">Voir les menus</a></header>
+        <div class="home-meals">
+            {% for menu in menus_du_jour %}
+                <article><h3>{{ menu.libelle }}</h3>{% if menu.nom %}<strong>{{ menu.nom }}</strong>{% endif %}<p>{{ menu.elements is empty ? 'Menu non renseigné' : menu.elements|join(' · ') }}</p></article>
+            {% else %}<p class="home-empty-copy">Aucun menu n’est renseigné pour aujourd’hui.</p>{% endfor %}
+        </div>
+    </section>
+</main>
+{% endblock %}

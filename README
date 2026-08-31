@@ -1,0 +1,109 @@
+# Scout Market
+
+Scout Market est l’application permanente d’intendance des Scouts et Guides de
+France. Elle reprend le métier Intendance de Campement sans notion de séjour et sans
+les modules administratifs historiques.
+
+## Fonctionnalités
+
+- catalogue global des fournisseurs, denrées et conditionnements ;
+- classification des denrées en **produit sec**, **fruit et légume** ou **produit frais** ;
+- recettes et grilles de menus datées, affectées aux unités participantes ;
+- effectifs, régimes, allergènes et repas explo, pique-nique ou non pris par unité ;
+- mouvements de stock, distribution, commande et listes de courses ;
+- distribution **Scout Market** par repas ou **en caisse** par journée ;
+- comptes administrateur, gestionnaire et unité participante.
+
+Le mode de distribution est défini sur chaque menu. Il modifie uniquement les vues de
+distribution : les règles explo, pique-nique et repas non pris restent identiques dans
+les calculs.
+
+## Architecture
+
+- PHP 8.4 et Symfony 8.1 ;
+- PostgreSQL 18 ;
+- Liquibase 5 avec une migration initiale unique ;
+- Nginx et Docker Compose ;
+- JavaScript natif, Stimulus et Playwright.
+
+Le schéma PostgreSQL applicatif est `scout_market`. Les choix techniques et le modèle
+métier sont détaillés dans [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md).
+
+## Démarrage local
+
+Prérequis : Docker avec Compose v2 et GNU Make.
+
+```shell
+cp .env.example .env
+make install
+```
+
+L’application est disponible sur <http://localhost:8080>. Le jeu de développement
+s’adapte à la date du jour et fournit notamment ces comptes, tous avec le mot de passe
+`ScoutMarket?2026!` :
+
+- `admin@scout-market.local` ;
+- `gestionnaire@scout-market.local` ;
+- `farfadets@scout-market.local` ;
+- `scouts@scout-market.local`.
+
+Ces identifiants sont strictement réservés aux environnements `dev` et `test`.
+
+Commandes courantes :
+
+```shell
+make up
+make down
+make dev-data
+make db-status-dev
+make console ARGS="about"
+```
+
+## Base et données de développement
+
+Le projet repart d’un historique Liquibase neuf :
+
+```text
+database/changelog/db.changelog-master.yaml
+└── V001__initialisation_scout_market.sql
+```
+
+La migration crée la structure, les contraintes et les référentiels indispensables.
+Son changeset `dev`, explicitement exclu par la configuration de production, ajoute
+uniquement le compte administrateur local. `make dev-data` recharge un
+jeu complet avec plusieurs fournisseurs, denrées, recettes, grilles, unités, menus et
+mouvements, tous positionnés autour de la date courante.
+
+La future reprise de l’inventaire Campement est une opération séparée de Liquibase.
+Son contrat est décrit dans
+[`docs/reprise-inventaire-production.md`](docs/reprise-inventaire-production.md).
+
+## Vérifications avant livraison
+
+```shell
+make db-validate
+make doctrine-validate
+make lint-php
+make analyse-statique
+make test
+npm ci
+make test-accessibility
+make test-e2e
+make production-smoke
+```
+
+`make test` recrée uniquement `scout_market_test`. `make production-smoke` construit
+et vérifie une installation de production jetable, y compris les rôles PostgreSQL et
+une sauvegarde chiffrée restaurée ; il requiert aussi `jq` et `openssl` sur l’hôte.
+
+## Livraison et exploitation
+
+Le projet est livré manuellement depuis les sources, sans CI et sans registre d’images
+pour le moment :
+
+- [`docs/livraison-github.md`](docs/livraison-github.md) : dépôt, version et publication ;
+- [`docs/exploitation-production.md`](docs/exploitation-production.md) : première
+  installation, mise à jour, sauvegarde et retour arrière.
+
+Ne jamais versionner `.env`, la clé privée `age`, une sauvegarde ou un export de
+production. Les exemples de configuration ne contiennent aucun secret utilisable.

@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+{% block title %}Distribution en caisse | Scout Market{% endblock %}
+{% block body %}
+<main class="orders-page entity-list-page distribution-admin-page">
+    {{ include('distribution/_navigation.html.twig', {page: 'en_caisse', sous_titre: 'Livraison initiale et caisses quotidiennes regroupées par journée'}) }}
+    <p class="order-calculation-note">Les produits secs sont regroupés dans la livraison initiale. Les produits frais, fruits et légumes restent détaillés dans les caisses quotidiennes. Les choix Explo, pique-nique et repas non pris restent appliqués sans être modifiés par ce mode.</p>
+    <details class="dry-delivery-card" open>
+        <summary><div><span class="crate-menu__eyebrow">Livraison initiale</span><h2>Produits secs à livrer</h2><p>Total nécessaire pour l’ensemble des repas à venir distribués en caisse.</p></div><span class="order-meal-card__meta"><span>{{ produits_secs|length }} produit{{ produits_secs|length > 1 ? 's' : '' }}</span><span class="order-meal-card__chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></span></span></summary>
+        {% if produits_secs is empty %}<p class="order-meal-empty">Aucun produit sec n’est nécessaire pour les repas à venir.</p>
+        {% else %}<div class="order-table"><table><thead><tr><th scope="col">Denrée</th><th scope="col">Régime</th><th scope="col">Quantité totale à livrer</th><th scope="col">Unité</th></tr></thead><tbody>{% for ligne in produits_secs %}<tr><th scope="row">{{ ligne.denree.nom }}</th><td>{{ ligne.regime ? ligne.regime.libelle : 'Standard' }}</td><td class="order-total"><strong>{{ ligne.quantite|quantite }}</strong></td><td>{{ ligne.unite.nom }} ({{ ligne.unite.symbole }})</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+    </details>
+    <header class="daily-crates-heading"><span class="crate-menu__eyebrow">Préparation quotidienne</span><h2>Caisses par jour et par unité</h2><p>Produits frais, fruits et légumes à regrouper dans la caisse quotidienne de chaque unité.</p></header>
+    {% if commandes is empty %}<section class="stock-list-card"><div class="stocks-empty"><strong>Aucune caisse à préparer</strong><p>Aucun repas à venir distribué en caisse ne contient de produit frais, fruit ou légume.</p></div></section>
+    {% else %}<div class="orders-list">
+        {% for commande in commandes %}<details class="order-meal-card" open>
+            <summary><h2><time datetime="{{ commande.date|date('Y-m-d') }}">{{ commande.date|date_jour_mois }}</time></h2><span class="order-meal-card__meta"><span>{{ commande.menus|length }} menu{{ commande.menus|length > 1 ? 's' : '' }}</span><span class="order-meal-card__chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></span></span></summary>
+            <div class="crate-menus">{% for detail_menu in commande.menus %}<section class="crate-menu">
+                <header><div><span class="crate-menu__eyebrow">Grille de menus</span><h3>{{ detail_menu.grille.label }}</h3></div><span>{{ detail_menu.unites|length }} unité{{ detail_menu.unites|length > 1 ? 's' : '' }}</span></header>
+                <div class="crate-units">{% for unite in detail_menu.unites %}<article class="crate-unit">
+                    <header><div><h4>{{ unite.groupe.nom }}</h4></div><span>{{ unite.lignes|length }} produit{{ unite.lignes|length > 1 ? 's' : '' }}</span></header>
+                    <div class="order-table"><table><thead><tr><th scope="col">Denrée</th><th scope="col">Type</th><th scope="col">Régime</th><th scope="col">Quantité</th><th scope="col">Unité</th></tr></thead><tbody>{% for ligne in unite.lignes %}<tr><th scope="row">{{ ligne.denree.nom }}</th><td><span class="food-type-badge food-type-badge--{{ ligne.denree.type.value|lower }}">{{ ligne.denree.type.libelle }}</span></td><td>{{ ligne.regime ? ligne.regime.libelle : 'Standard' }}</td><td class="order-total"><strong>{{ ligne.quantite|quantite }}</strong></td><td>{{ ligne.unite.nom }} ({{ ligne.unite.symbole }})</td></tr>{% endfor %}</tbody></table></div>
+                </article>{% endfor %}</div>
+            </section>{% endfor %}</div>
+        </details>{% endfor %}
+    </div>{% endif %}
+</main>
+{% endblock %}

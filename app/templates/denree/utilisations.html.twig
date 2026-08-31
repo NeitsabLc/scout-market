@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+{% block title %}Repas utilisant {{ denree.nom }} | Scout Market{% endblock %}
+{% block body %}
+<main class="food-usages-page entity-list-page">
+    <nav class="food-breadcrumb"><a href="{{ path('app_denrees') }}">Denrées</a><span>/</span><span>{{ denree.nom }}</span></nav>
+    <header class="stock-list-heading entity-list-heading"><div><h1>Repas utilisant {{ denree.nom }}</h1><p>Quantités totales nécessaires selon les unités présentes et leur menu</p></div></header>
+    <section class="stock-list-card">
+        {% if utilisations is empty %}<div class="stocks-empty"><strong>Aucun repas trouvé</strong><p>Cette denrée n’est nécessaire dans aucun repas pour les unités présentes.</p></div>
+        {% else %}<div class="food-usages-table">
+            <table>
+                <thead><tr><th scope="col">Jour</th><th scope="col">Repas</th><th scope="col">Menu</th><th scope="col">Quantité totale nécessaire</th></tr></thead>
+                <tbody>{% for utilisation in utilisations %}<tr>
+                    <td><time datetime="{{ utilisation.menu.dateMenu|date('Y-m-d') }}">{{ utilisation.menu.dateMenu|date('d/m/Y') }}</time></td>
+                    <th scope="row">{{ utilisation.menu.libelle }}</th>
+                    <td>{{ utilisation.grille.label }}</td>
+                    <td class="order-total">{% for total in utilisation.quantites %}{% if not loop.first %}<span aria-hidden="true"> + </span>{% endif %}<strong>{{ total.quantite|quantite }}</strong> {{ total.unite.symbole }}{% endfor %}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>{% endif %}
+    </section>
+</main>
+{% endblock %}

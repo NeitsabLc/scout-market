@@ -1,0 +1,8 @@
+<header class="stock-list-heading entity-list-heading distribution-list-heading">
+    <div><h1>Distribution</h1><p>{{ sous_titre }}</p></div>
+    <a class="food-primary" href="{{ path('app_distribution_configuration') }}">Configuration</a>
+</header>
+<nav class="distribution-tabs" aria-label="Modes de distribution">
+    <a href="{{ path('app_distribution_scout_market') }}"{{ page == 'scout_market' ? ' aria-current="page"' : '' }}>Scout Market</a>
+    <a href="{{ path('app_distribution_en_caisse') }}"{{ page == 'en_caisse' ? ' aria-current="page"' : '' }}>En caisse</a>
+</nav>
