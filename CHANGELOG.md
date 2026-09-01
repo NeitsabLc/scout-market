@@ -1,5 +1,11 @@
 # Journal des modifications
 
+## 0.1.2 — Installation web01 reproductible
+
+- installation documentée dans `/srv/docker/scout-market` ;
+- utilisation du sous-réseau Docker dédié `172.31.0.0/24` pour éviter Campement ;
+- ajout d’un `pg_hba.conf` adapté au rôle unique et lisible par PostgreSQL.
+
 ## 0.1.1 — Déploiement initial simplifié
 
 - ajout d’une procédure de déploiement sans CI ni registre d’images ;

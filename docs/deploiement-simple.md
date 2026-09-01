@@ -23,13 +23,14 @@ Depuis un poste ayant accès au réseau `192.168.2.0/24` :
 
 ```shell
 ssh web01
-sudo install -d -m 0750 -o bastien -g bastien /opt/scout-market
-git clone --branch v0.1.1 --depth 1 \
-  https://github.com/NeitsabLc/scout-market.git /opt/scout-market
-cd /opt/scout-market
+cd /srv/docker
+git clone --branch v0.1.2 --depth 1 \
+  https://github.com/NeitsabLc/scout-market.git scout-market
+cd /srv/docker/scout-market
 cp .env.simple-prod.example .env
-cp docker/postgres/pg_hba.prod.conf.example docker/postgres/pg_hba.prod.conf
-chmod 600 .env docker/postgres/pg_hba.prod.conf
+cp deploy/web01/pg_hba.simple-prod.conf docker/postgres/pg_hba.prod.conf
+chmod 600 .env
+chmod 644 docker/postgres/pg_hba.prod.conf
 ```
 
 Générer les secrets :
@@ -44,8 +45,8 @@ dans `POSTGRES_PASSWORD`, `POSTGRES_APP_PASSWORD`, `POSTGRES_MIGRATOR_PASSWORD`,
 `POSTGRES_HEALTHCHECK_PASSWORD` et `POSTGRES_BACKUP_PASSWORD`.
 
 Les autres valeurs sont déjà préparées pour cette infrastructure : domaine public,
-écoute Nginx sur `192.168.2.18:8082`, proxy de confiance `192.168.2.6` et sauvegarde
-`age` désactivée.
+écoute Nginx sur `192.168.2.18:8082`, réseau Docker `172.31.0.0/24`, proxy de
+confiance `192.168.2.6` et sauvegarde `age` désactivée.
 
 Construire et démarrer :
 
@@ -66,7 +67,7 @@ Ne pas exécuter `prod-db-roles-prepare`, `prod-db-roles-finalize`, `backup-now`
 
 ## 3. Restreindre le port 8082 sur web01
 
-Toujours depuis `/opt/scout-market` :
+Toujours depuis `/srv/docker/scout-market` :
 
 ```shell
 sudo install -m 0755 deploy/web01/scout-market-docker-firewall \
@@ -96,7 +97,7 @@ Repérer la source correspondant à `/etc/traefik/dynamic`, puis y installer le 
 Exemple si la source affichée est `/srv/traefik/dynamic` :
 
 ```shell
-scp bastien@192.168.2.18:/opt/scout-market/deploy/proxy01/scout-market.yml \
+scp bastien@192.168.2.18:/srv/docker/scout-market/deploy/proxy01/scout-market.yml \
   /tmp/scout-market.yml
 sudo install -m 0644 /tmp/scout-market.yml /srv/traefik/dynamic/scout-market.yml
 rm /tmp/scout-market.yml
@@ -119,7 +120,7 @@ curl --fail --show-error --silent \
 Puis sur `web01` :
 
 ```shell
-cd /opt/scout-market
+cd /srv/docker/scout-market
 make prod-create-admin \
   EMAIL=admin@neitsab.net \
   PRENOM=Bastien \
@@ -133,12 +134,12 @@ depuis le navigateur.
 
 ```shell
 ssh web01
-cd /opt/scout-market
+cd /srv/docker/scout-market
 git fetch --tags
-git checkout v0.1.2
+git checkout v0.1.3
 ```
 
-Mettre `APP_IMAGE_TAG=v0.1.2` dans `.env`, puis :
+Mettre `APP_IMAGE_TAG=v0.1.3` dans `.env`, puis :
 
 ```shell
 make prod-build
