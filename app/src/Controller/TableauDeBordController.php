@@ -9,7 +9,7 @@ use App\Repository\DenreeRepository;
 use App\Repository\GrilleMenuRepository;
 use App\Repository\GroupeRepository;
 use App\Repository\MenuRepository;
-use App\Service\CalculStockDynamique;
+use App\Repository\RecetteRepository;
 use App\Service\PresentationMenu;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
@@ -26,7 +26,7 @@ final class TableauDeBordController extends AbstractController
         GrilleMenuRepository $grilles,
         GroupeRepository $groupes,
         MenuRepository $menus,
-        CalculStockDynamique $stocks,
+        RecetteRepository $recettes,
         PresentationMenu $presentation,
     ): Response {
         if ($this->isGranted(Utilisateur::ROLE_GROUPE)) {
@@ -71,7 +71,7 @@ final class TableauDeBordController extends AbstractController
             'aujourdhui' => $aujourdhui,
             'nombre_denrees' => count($catalogue),
             'nombre_grilles' => count($grilles->findActives()),
-            'stocks' => $stocks->pourDenrees($catalogue),
+            'nombre_recettes' => $recettes->countActives(),
             'resume_unites' => $resumeUnites,
             'menus_du_jour' => $presentation->resumesMenus($menus->findPourDate($aujourdhui)),
         ]);

@@ -1,5 +1,11 @@
 # Journal des modifications
 
+## 0.1.4 — Statistiques du tableau de bord
+
+- remplacement du nombre de stocks suivis par le nombre de recettes actives ;
+- accès direct au catalogue des recettes depuis la statistique ;
+- suppression du calcul des stocks devenu inutile au chargement de l’accueil.
+
 ## 0.1.3 — Envoi d’e-mails OVH
 
 - ajout des variables d’expéditeur aux conteneurs PHP ;

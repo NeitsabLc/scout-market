@@ -22,6 +22,16 @@ final class RecetteRepository extends ServiceEntityRepository
         return $this->findPourGestion(true);
     }
 
+    public function countActives(): int
+    {
+        return (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->andWhere('r.actif = :actif')
+            ->setParameter('actif', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return list<Recette> */
     public function findPourGestion(bool $actif, string $tri = 'nom', string $ordre = 'asc'): array
     {

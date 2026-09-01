@@ -37,6 +37,9 @@ final class ScoutMarketTest extends WebTestCase
         self::assertSelectorTextContains('.sidebar__nav', 'Unités participantes');
         self::assertSelectorTextContains('.sidebar__nav', 'Utilisateurs');
         self::assertSelectorTextNotContains('body', 'Séjour actif');
+        self::assertSelectorTextContains('.home-kpis--summary', 'recettes actives');
+        self::assertSelectorExists('.home-kpis--summary a[href="/recettes"]');
+        self::assertSelectorTextNotContains('.home-kpis--summary', 'stocks suivis');
 
         $client->request('GET', '/sejours');
         self::assertResponseStatusCodeSame(404);
