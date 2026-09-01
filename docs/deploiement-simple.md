@@ -24,7 +24,7 @@ Depuis un poste ayant accès au réseau `192.168.2.0/24` :
 ```shell
 ssh web01
 cd /srv/docker
-git clone --branch v0.1.4 --depth 1 \
+git clone --branch v0.1.5 --depth 1 \
   https://github.com/NeitsabLc/scout-market.git scout-market
 cd /srv/docker/scout-market
 cp .env.simple-prod.example .env
@@ -170,10 +170,10 @@ depuis le navigateur.
 ssh web01
 cd /srv/docker/scout-market
 git fetch --tags
-git checkout v0.1.5
+git checkout v0.1.6
 ```
 
-Mettre `APP_IMAGE_TAG=v0.1.5` dans `.env`, puis :
+Mettre `APP_IMAGE_TAG=v0.1.6` dans `.env`, puis :
 
 ```shell
 make prod-build

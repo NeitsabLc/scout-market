@@ -69,7 +69,8 @@ Liquibase. Voir [`docs/reprise-inventaire-production.md`](docs/reprise-inventair
 ## Sécurité et rôles
 
 - `ROLE_ADMIN` hérite de `ROLE_GESTIONNAIRE` ;
-- `ROLE_GESTIONNAIRE` administre l’intendance ;
+- `ROLE_ADMIN` gère les comptes utilisateurs ;
+- `ROLE_GESTIONNAIRE` administre l’intendance et les unités participantes, sans accès à la gestion des comptes ;
 - `ROLE_GROUPE` consulte la grille de son unité ;
 - `ROLE_TECHNIQUE` attribue les distributions publiques sans pouvoir se connecter.
 

@@ -1,5 +1,11 @@
 # Journal des modifications
 
+## 0.1.5 — Administration des comptes
+
+- gestion des comptes utilisateurs réservée aux administrateurs ;
+- suppression du lien Utilisateurs dans la navigation des gestionnaires ;
+- blocage côté serveur des accès directs d’un gestionnaire au module.
+
 ## 0.1.4 — Statistiques du tableau de bord
 
 - remplacement du nombre de stocks suivis par le nombre de recettes actives ;

@@ -87,7 +87,7 @@
                     <header><span><small>Section</small><strong>Gestion</strong></span><button type="button" data-sidebar-panel-close aria-label="Fermer le sous-menu">×</button></header>
                     <nav aria-label="Sous-menu Gestion">
                         <a href="{{ path('app_groupes') }}"{{ app.current_route starts with 'app_groupe' ? ' aria-current="page"' : '' }}><span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M2 20a6 6 0 0 1 12 0M13 20a5 5 0 0 1 9 0"/></svg></span><span><strong>Unités participantes</strong><small>Effectifs et besoins</small></span></a>
-                        <a href="{{ path('app_utilisateurs') }}"{{ app.current_route starts with 'app_utilisateur' ? ' aria-current="page"' : '' }}><span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 11a3 3 0 0 1 0 6M19 20v-2"/></svg></span><span><strong>Utilisateurs</strong><small>Comptes et accès</small></span></a>
+                        {% if is_granted('ROLE_ADMIN') %}<a href="{{ path('app_utilisateurs') }}"{{ app.current_route starts with 'app_utilisateur' ? ' aria-current="page"' : '' }}><span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 11a3 3 0 0 1 0 6M19 20v-2"/></svg></span><span><strong>Utilisateurs</strong><small>Comptes et accès</small></span></a>{% endif %}
                     </nav>
                 </div>
             </details>

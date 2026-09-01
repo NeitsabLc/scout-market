@@ -101,6 +101,41 @@ final class ScoutMarketTest extends WebTestCase
         $entityManager->flush();
     }
 
+    public function testLeGestionnaireNePeutPasGererLesComptesUtilisateurs(): void
+    {
+        $client = static::createClient();
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $gestionnaire = $this->gestionnaire();
+        $entityManager->persist($gestionnaire);
+        $entityManager->flush();
+        $gestionnaireId = (string) $gestionnaire->getId();
+
+        try {
+            $client->loginUser($gestionnaire);
+            $client->request('GET', '/');
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('.sidebar__nav', 'Unités participantes');
+            self::assertSelectorTextNotContains('.sidebar__nav', 'Utilisateurs');
+
+            $client->request('GET', '/utilisateurs');
+            self::assertResponseStatusCodeSame(403);
+
+            $client->request('GET', '/utilisateurs/ajouter');
+            self::assertResponseStatusCodeSame(403);
+
+            $client->request('GET', '/utilisateurs/'.$this->administrateur()->getId().'/modifier');
+            self::assertResponseStatusCodeSame(403);
+        } finally {
+            $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+            $gestionnairePersistant = $entityManager->find(Utilisateur::class, $gestionnaireId);
+            if (null !== $gestionnairePersistant) {
+                $entityManager->remove($gestionnairePersistant);
+                $entityManager->flush();
+            }
+        }
+    }
+
     public function testLeTableauDeBordAfficheLesEffectifsEtBesoinsDesUnitesPresentes(): void
     {
         $client = static::createClient();
@@ -251,5 +286,15 @@ final class ScoutMarketTest extends WebTestCase
         self::assertInstanceOf(Utilisateur::class, $utilisateur);
 
         return $utilisateur;
+    }
+
+    private function gestionnaire(): Utilisateur
+    {
+        return (new Utilisateur())
+            ->setPrenom('Gestionnaire')
+            ->setNom('Test')
+            ->setEmail('gestionnaire.'.bin2hex(random_bytes(4)).'@scout-market.local')
+            ->setPassword('mot-de-passe-test')
+            ->setRole(Utilisateur::ROLE_GESTIONNAIRE);
     }
 }

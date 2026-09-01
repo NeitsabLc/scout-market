@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Uid\Uuid;
 
-#[IsGranted(Utilisateur::ROLE_GESTIONNAIRE)]
+#[IsGranted(Utilisateur::ROLE_ADMIN)]
 final class UtilisateurController extends AbstractController
 {
     private const ROLES = [
@@ -31,8 +31,7 @@ final class UtilisateurController extends AbstractController
     #[Route('/utilisateurs/{id}/modifier', name: 'app_utilisateur_modifier', methods: ['GET', 'POST'])]
     public function index(Request $request, UtilisateurRepository $utilisateurs, GroupeRepository $groupes, InvitationUtilisateur $invitation, EntityManagerInterface $entityManager, ?string $id = null): Response
     {
-        $estAdministrateur = $this->isGranted(Utilisateur::ROLE_ADMIN);
-        $roles = $estAdministrateur ? self::ROLES : array_intersect_key(self::ROLES, array_flip([Utilisateur::ROLE_GESTIONNAIRE, Utilisateur::ROLE_GROUPE]));
+        $roles = self::ROLES;
         $utilisateurRoute = null !== $id && Uuid::isValid($id) ? $utilisateurs->find($id) : null;
         if (null !== $id && !$utilisateurRoute instanceof Utilisateur) {
             throw $this->createNotFoundException('Utilisateur introuvable.');
@@ -100,7 +99,7 @@ final class UtilisateurController extends AbstractController
 
         return $this->render($vue, [
             'utilisateurs' => $utilisateurs->findPourAdministration(), 'groupes' => $groupes->findActifs(),
-            'roles' => $roles, 'est_administrateur' => $estAdministrateur, 'donnees' => $donnees, 'erreurs' => $erreurs,
+            'roles' => $roles, 'donnees' => $donnees, 'erreurs' => $erreurs,
         ], $request->isMethod('POST') ? new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY) : null);
     }
 
