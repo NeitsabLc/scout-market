@@ -24,7 +24,7 @@ Depuis un poste ayant accès au réseau `192.168.2.0/24` :
 ```shell
 ssh web01
 cd /srv/docker
-git clone --branch v0.1.2 --depth 1 \
+git clone --branch v0.1.3 --depth 1 \
   https://github.com/NeitsabLc/scout-market.git scout-market
 cd /srv/docker/scout-market
 cp .env.simple-prod.example .env
@@ -64,6 +64,40 @@ curl --fail --silent --show-error \
 
 Ne pas exécuter `prod-db-roles-prepare`, `prod-db-roles-finalize`, `backup-now` ou
 `production-smoke` pour ce premier déploiement simplifié.
+
+### Configurer l’envoi SMTP OVH MX Plan
+
+Le compte d’envoi est `no-reply@neitsab.net`. OVH MX Plan Europe utilise
+`smtp.mail.ovh.net`, le port `465` et SSL/TLS implicite. Le mot de passe doit être
+encodé pour une URI avant d’être placé dans le DSN Symfony.
+
+Sur `web01`, depuis `/srv/docker/scout-market` :
+
+```shell
+printf 'Mot de passe SMTP OVH : '
+read -r -s scout_market_smtp_password
+printf '\n'
+export SCOUT_MARKET_SMTP_PASSWORD="$scout_market_smtp_password"
+scout_market_smtp_password_encoded=$(php -r \
+  'echo rawurlencode((string) getenv("SCOUT_MARKET_SMTP_PASSWORD"));')
+sed -i \
+  "s|^MAILER_DSN=.*|MAILER_DSN=smtps://no-reply%40neitsab.net:${scout_market_smtp_password_encoded}@smtp.mail.ovh.net:465|" \
+  .env
+unset SCOUT_MARKET_SMTP_PASSWORD scout_market_smtp_password \
+  scout_market_smtp_password_encoded
+chmod 600 .env
+make prod-up
+```
+
+Tester ensuite le transport en envoyant un message au compte technique :
+
+```shell
+docker compose -f compose.yaml -f compose.prod.yaml exec php \
+  php bin/console mailer:test no-reply@neitsab.net \
+  --from=no-reply@neitsab.net --subject='Test SMTP Scout Market' \
+  --body='Le transport SMTP OVH de Scout Market fonctionne.' \
+  --env=prod --no-debug
+```
 
 ## 3. Restreindre le port 8082 sur web01
 
@@ -136,10 +170,10 @@ depuis le navigateur.
 ssh web01
 cd /srv/docker/scout-market
 git fetch --tags
-git checkout v0.1.3
+git checkout v0.1.4
 ```
 
-Mettre `APP_IMAGE_TAG=v0.1.3` dans `.env`, puis :
+Mettre `APP_IMAGE_TAG=v0.1.4` dans `.env`, puis :
 
 ```shell
 make prod-build

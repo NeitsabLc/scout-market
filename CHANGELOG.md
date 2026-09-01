@@ -1,5 +1,11 @@
 # Journal des modifications
 
+## 0.1.3 — Envoi d’e-mails OVH
+
+- ajout des variables d’expéditeur aux conteneurs PHP ;
+- utilisation de `no-reply@neitsab.net` comme expéditeur par défaut ;
+- documentation du SMTP SSL/TLS OVH MX Plan.
+
 ## 0.1.2 — Installation web01 reproductible
 
 - installation documentée dans `/srv/docker/scout-market` ;
