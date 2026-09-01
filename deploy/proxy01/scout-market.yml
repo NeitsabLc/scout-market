@@ -1,0 +1,30 @@
+http:
+  routers:
+    scout-market-http:
+      rule: "Host(`scout-market.neitsab.net`)"
+      entryPoints:
+        - web
+      middlewares:
+        - scout-market-https
+      service: scout-market
+
+    scout-market-https:
+      rule: "Host(`scout-market.neitsab.net`)"
+      entryPoints:
+        - websecure
+      service: scout-market
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    scout-market-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+  services:
+    scout-market:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://192.168.2.18:8082"

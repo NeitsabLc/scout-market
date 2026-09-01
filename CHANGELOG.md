@@ -1,5 +1,11 @@
 # Journal des modifications
 
+## 0.1.1 — Déploiement initial simplifié
+
+- ajout d’une procédure de déploiement sans CI ni registre d’images ;
+- sauvegarde chiffrée rendue optionnelle et désactivée par défaut ;
+- ajout d’un exemple d’environnement utilisant un rôle PostgreSQL unique.
+
 ## 0.1.0 — Scout Market
 
 - extraction du seul périmètre Intendance de Campement ;

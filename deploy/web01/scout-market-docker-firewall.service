@@ -1,0 +1,13 @@
+[Unit]
+Description=Filtrage Docker du port 8082 de Scout Market
+Requires=docker.service
+After=docker.service ufw.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/scout-market-docker-firewall
+ExecReload=/usr/local/sbin/scout-market-docker-firewall
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

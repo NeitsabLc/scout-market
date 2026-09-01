@@ -101,6 +101,8 @@ une sauvegarde chiffrée restaurée ; il requiert aussi `jq` et `openssl` sur l�
 Le projet est livré manuellement depuis les sources, sans CI et sans registre d’images
 pour le moment :
 
+- [`docs/deploiement-simple.md`](docs/deploiement-simple.md) : première mise en ligne
+  sans `age`, sans registre et avec un seul rôle PostgreSQL ;
 - [`docs/livraison-github.md`](docs/livraison-github.md) : dépôt, version et publication ;
 - [`docs/exploitation-production.md`](docs/exploitation-production.md) : première
   installation, mise à jour, sauvegarde et retour arrière.

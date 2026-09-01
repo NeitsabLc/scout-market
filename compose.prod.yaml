@@ -69,6 +69,8 @@ services:
     pids_limit: 64
 
   backup:
+    profiles:
+      - backup
     logging: *production-logging
     restart: unless-stopped
     image: "scout-market-backup:${APP_IMAGE_TAG:-local}"
@@ -91,7 +93,7 @@ services:
       POSTGRES_DB: "${POSTGRES_DB}"
       POSTGRES_USER: "${POSTGRES_BACKUP_USER}"
       PGPASSWORD: "${POSTGRES_BACKUP_PASSWORD}"
-      BACKUP_AGE_RECIPIENT: "${BACKUP_AGE_RECIPIENT:?BACKUP_AGE_RECIPIENT doit être renseigné}"
+      BACKUP_AGE_RECIPIENT: "${BACKUP_AGE_RECIPIENT:-}"
     volumes:
       - "${BACKUP_DIR:-./var/backups}:/backups"
     tmpfs:
@@ -136,6 +138,7 @@ services:
       - postgres
       - -c
       - hba_file=/etc/postgresql/pg_hba.conf
+    ports: !override []
     volumes:
       - "${POSTGRES_HBA_FILE:-./docker/postgres/pg_hba.prod.conf.example}:/etc/postgresql/pg_hba.conf:ro"
     tmpfs:

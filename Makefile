@@ -45,11 +45,11 @@ prod-config: ## Valider silencieusement la configuration Compose de production
 
 .PHONY: prod-build
 prod-build: prod-config ## Construire localement les images de production
-	$(DOCKER_COMPOSE_PROD) build --pull php nginx database liquibase backup
+	$(DOCKER_COMPOSE_PROD) build --pull php nginx database liquibase
 
 .PHONY: prod-up
 prod-up: prod-config ## Démarrer l'application de production sans reconstruire les images
-	$(DOCKER_COMPOSE_PROD) up -d --no-build database php nginx backup
+	$(DOCKER_COMPOSE_PROD) up -d --no-build database php nginx
 
 .PHONY: prod-ps
 prod-ps: ## Afficher l'état des conteneurs de production
@@ -219,7 +219,7 @@ clean: ## Nettoyer les fichiers temporaires Symfony
 
 .PHONY: backup-now
 backup-now: ## Créer immédiatement une sauvegarde via le service de production
-	$(DOCKER_COMPOSE_PROD) run --rm -e BACKUP_ONCE=1 backup
+	$(DOCKER_COMPOSE_PROD) --profile backup run --rm -e BACKUP_ONCE=1 backup
 
 .PHONY: backup-restore-test
 backup-restore-test: ## Chiffrer puis restaurer la base dans un environnement jetable
