@@ -116,7 +116,7 @@ jobs:
       - name: Initialiser les donnees de controle
         run: |
           docker compose --profile tools run --rm liquibase update --context-filter=dev
-          docker compose exec --no-TTY php php bin/console app:dev:charger-jeu-donnees
+          docker compose exec --no-TTY -e APP_ENV=dev php php bin/console app:dev:charger-jeu-donnees
 
       - name: Installer les dependances navigateur
         run: npm ci
