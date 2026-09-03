@@ -93,13 +93,27 @@ make production-smoke
 ```
 
 `make test` recrée uniquement `scout_market_test`. `make production-smoke` construit
-et vérifie une installation de production jetable, y compris les rôles PostgreSQL et
-une sauvegarde chiffrée restaurée ; il requiert aussi `jq` et `openssl` sur l’hôte.
+et vérifie une installation de production jetable, notamment les rôles PostgreSQL,
+une sauvegarde chiffrée restaurée et le cycle de maintenance ; il requiert aussi `jq`
+et `openssl` sur l’hôte.
+
+## Intégration continue
+
+Le workflow `.github/workflows/ci.yaml` s’exécute sur les pull requests et les pushs
+visant `dev` ou `main`, ainsi que manuellement. `dev` porte la recette et `main` la
+production. Le workflow valide Docker Compose, Composer, Liquibase et Doctrine,
+audite les dépendances, compile les assets, exécute PHPStan, le contrôle de style,
+PHPUnit, les contrôles d’accessibilité et les parcours E2E.
+
+Sur `main` uniquement, un job indépendant construit la surcharge de production et
+vérifie les rôles PostgreSQL, le durcissement des conteneurs, la sauvegarde chiffrée,
+sa restauration dans une base jetable et la maintenance quotidienne. Les secrets
+utilisés par la CI sont générés pour le run et masqués dans les journaux.
 
 ## Livraison et exploitation
 
-Le projet est livré manuellement depuis les sources, sans CI et sans registre d’images
-pour le moment :
+Le projet reste livré manuellement. La CI valide chaque changement ; la publication
+automatique d’images vers un registre n’est pas activée :
 
 - [`docs/deploiement-simple.md`](docs/deploiement-simple.md) : première mise en ligne
   sans `age`, sans registre et avec un seul rôle PostgreSQL ;
@@ -109,3 +123,8 @@ pour le moment :
 
 Ne jamais versionner `.env`, la clé privée `age`, une sauvegarde ou un export de
 production. Les exemples de configuration ne contiennent aucun secret utilisable.
+
+En production, `maintenance` purge chaque jour les jetons de réinitialisation de mot
+de passe expirés. Il ne supprime ni les mouvements de stock ni leur historique
+d’audit. Le service `backup`, activé explicitement avec le profil homonyme, produit
+chaque jour une sauvegarde PostgreSQL chiffrée et conserve sept jours.

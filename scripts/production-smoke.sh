@@ -65,7 +65,7 @@ nettoyer() {
     trap - EXIT INT TERM
     if [ "$statut" -ne 0 ]; then
         compose ps >&2 || true
-        compose logs --no-color --tail=200 database php nginx backup >&2 || true
+        compose logs --no-color --tail=200 database php nginx maintenance backup >&2 || true
     fi
     compose down --volumes --remove-orphans >/dev/null 2>&1 || true
     rm -rf "$repertoire_temporaire"
@@ -166,10 +166,11 @@ compose exec --no-TTY php php bin/console cache:warmup --env=prod --no-debug
 compose exec --no-TTY php php bin/console dbal:run-sql \
     "SELECT current_database(), current_user, current_schema()"
 
-compose --profile tools create backup liquibase
+compose --profile tools create maintenance backup liquibase
 assert_container_hardened php www-data 536870912 1000000000 128
 assert_container_hardened nginx nginx 134217728 500000000 64
 assert_container_hardened database postgres 1073741824 2000000000 256
+assert_container_hardened maintenance www-data 268435456 500000000 64
 assert_container_hardened backup postgres 536870912 1000000000 128
 assert_container_hardened liquibase liquibase 536870912 1000000000 128
 
@@ -238,6 +239,26 @@ compose run --rm --no-deps \
     --volume "$fichier_identite:/run/identity.txt:ro" \
     --entrypoint /usr/local/bin/scout-market-verify-backup \
     backup "/backups/$(basename "$archive_base")"
+
+compose exec --no-TTY database sh -ec '
+    PGPASSWORD="$POSTGRES_APP_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_APP_USER" --dbname="$POSTGRES_DB" \
+        --set=ON_ERROR_STOP=1 \
+        --command="UPDATE scout_market.utilisateur
+            SET jeton_reinitialisation = repeat('\''a'\'', 64),
+                expiration_jeton_reinitialisation = CURRENT_TIMESTAMP - INTERVAL '\''1 hour'\''
+            WHERE email = '\''saisie-consommation@scout-market.local'\''"
+'
+compose run --rm --env MAINTENANCE_ONCE=1 maintenance
+compose exec --no-TTY database sh -ec '
+    resultat=$(PGPASSWORD="$POSTGRES_APP_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_APP_USER" --dbname="$POSTGRES_DB" \
+        --tuples-only --no-align --set=ON_ERROR_STOP=1 \
+        --command="SELECT count(*) FROM scout_market.utilisateur
+            WHERE expiration_jeton_reinitialisation < CURRENT_TIMESTAMP
+              AND jeton_reinitialisation IS NOT NULL")
+    test "$resultat" = "0"
+'
 
 compose exec --no-TTY database scout-market-harden-roles finalize
 

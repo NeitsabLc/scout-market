@@ -90,7 +90,10 @@ RUN : > .env \
 
 FROM php-base AS php-production
 
+COPY docker/php/maintenance.sh /usr/local/bin/scout-market-maintenance
 COPY --from=app-builder --chown=www-data:www-data /var/www/app /var/www/app
+
+RUN chmod 0755 /usr/local/bin/scout-market-maintenance
 
 USER www-data
 

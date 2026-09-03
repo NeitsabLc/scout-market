@@ -45,11 +45,11 @@ prod-config: ## Valider silencieusement la configuration Compose de production
 
 .PHONY: prod-build
 prod-build: prod-config ## Construire localement les images de production
-	$(DOCKER_COMPOSE_PROD) build --pull php nginx database liquibase
+	$(DOCKER_COMPOSE_PROD) build --pull php nginx database liquibase backup
 
 .PHONY: prod-up
 prod-up: prod-config ## Démarrer l'application de production sans reconstruire les images
-	$(DOCKER_COMPOSE_PROD) up -d --no-build database php nginx
+	$(DOCKER_COMPOSE_PROD) up -d --no-build database php nginx maintenance
 
 .PHONY: prod-ps
 prod-ps: ## Afficher l'état des conteneurs de production
@@ -227,6 +227,10 @@ backup-restore-test: ## Chiffrer puis restaurer la base dans un environnement je
 
 .PHONY: production-smoke
 production-smoke: backup-restore-test ## Vérifier une installation de production jetable complète
+
+.PHONY: maintenance-now
+maintenance-now: ## Exécuter immédiatement un cycle de maintenance de production
+	$(DOCKER_COMPOSE_PROD) run --rm -e MAINTENANCE_ONCE=1 maintenance
 
 .PHONY: prod-db-roles-prepare
 prod-db-roles-prepare: ## Préparer les rôles PostgreSQL limités sans retirer les accès existants

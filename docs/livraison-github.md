@@ -1,8 +1,11 @@
-# Livrer Scout Market avec GitHub, sans CI
+# Livrer Scout Market avec GitHub et sa CI
 
-Le dépôt de référence est <https://github.com/NeitsabLc/scout-market>. Il reçoit les
-sources ; les images de production sont construites manuellement sur le serveur.
-Aucun workflow GitHub Actions ni fichier de pipeline n’est nécessaire à ce stade.
+Le dépôt de référence est <https://github.com/NeitsabLc/scout-market>. La branche
+`dev` sert à la recette et reçoit les évolutions en premier ; `main` représente la
+production. Le workflow `.github/workflows/ci.yaml` contrôle les deux branches. Le
+smoke test complet de production ne s’exécute que sur `main`. Les images
+de production restent construites manuellement sur le serveur tant que la publication
+GHCR n’est pas explicitement activée.
 
 ## 1. Préparer le dépôt GitHub
 
@@ -14,11 +17,14 @@ poste au compte GitHub puis vérifier :
 ssh -T git@github.com
 ```
 
-Dans **Settings > Rules > Rulesets**, protéger ensuite la branche par défaut `main` :
+Dans **Settings > Rules > Rulesets**, protéger les branches :
 
 - bloquer les suppressions et les force-push ;
-- exiger une pull request si plusieurs personnes contribuent ;
-- ne pas exiger de status check tant qu’aucune CI n’existe.
+- exiger une pull request vers `dev`, puis une pull request de `dev` vers `main` ;
+- exiger le contrôle `Qualite et tests` avant fusion lorsque l’offre GitHub permet les
+  rulesets sur ce dépôt privé ;
+- exiger également `Configuration de production` sur `main` lorsque l’offre GitHub le
+  permet.
 
 Un second ruleset peut protéger les tags `v*` contre la modification et la suppression.
 
@@ -45,7 +51,7 @@ privées n’apparaissent pas dans `git status`. Le script Campement local
 
 ## 3. Publier une version
 
-Mettre à jour `CHANGELOG.md` et `app.version`, exécuter tous les contrôles du README,
+Mettre à jour `CHANGELOG.md` et `app.version`, vérifier que la CI de `main` est verte,
 puis créer un tag annoté depuis `main` :
 
 ```shell
@@ -57,13 +63,15 @@ git push origin v0.1.0
 ```
 
 Sur GitHub, ouvrir **Releases > Draft a new release**, choisir le tag `v0.1.0`, reprendre
-les notes du changelog et publier. La release identifie exactement le code à déployer ;
-elle ne contient pas d’image Docker préconstruite.
+les notes du changelog et publier. La release identifie exactement le code à déployer.
+Tant que la publication GHCR n’est pas activée, elle ne contient pas d’image Docker
+préconstruite.
 
 ## 4. Convention pour la suite
 
-- `main` reste toujours déployable ;
-- une évolution est réalisée sur une branche courte puis fusionnée dans `main` ;
+- `dev` reste la branche de recette et reçoit les branches courtes ;
+- `main` reste toujours déployable et ne reçoit que les changements validés sur
+  `dev` ;
 - chaque livraison porte un tag `vMAJEUR.MINEUR.CORRECTIF` immuable ;
 - le serveur déploie un tag explicite, jamais une branche flottante ;
 - tout secret reste dans le `.env` du serveur ou dans un gestionnaire de secrets.
