@@ -21,8 +21,8 @@ final class PurgerJetonsReinitialisationExpiresCommandTest extends KernelTestCas
         $emailValide = 'jeton-valide-'.$suffixe.'@example.test';
 
         try {
-            $this->creerUtilisateurAvecJeton($connexion, $emailExpire, '-1 hour');
-            $this->creerUtilisateurAvecJeton($connexion, $emailValide, '+1 hour');
+            $this->creerUtilisateurAvecJeton($connexion, $emailExpire, true);
+            $this->creerUtilisateurAvecJeton($connexion, $emailValide, false);
 
             $application = new Application(self::$kernel);
             $testeur = new CommandTester($application->find('app:securite:purger-jetons-expires'));
@@ -40,14 +40,18 @@ final class PurgerJetonsReinitialisationExpiresCommandTest extends KernelTestCas
         }
     }
 
-    private function creerUtilisateurAvecJeton(Connection $connexion, string $email, string $expiration): void
+    private function creerUtilisateurAvecJeton(Connection $connexion, string $email, bool $expire): void
     {
+        $expiration = $expire
+            ? "CURRENT_TIMESTAMP - INTERVAL '1 hour'"
+            : "CURRENT_TIMESTAMP + INTERVAL '1 hour'";
+
         $connexion->executeStatement(
-            <<<'SQL'
+            <<<SQL
                 INSERT INTO scout_market.utilisateur (
                     email, mot_de_passe, prenom, nom, roles, actif,
                     jeton_reinitialisation, expiration_jeton_reinitialisation
-                ) VALUES (:email, :mot_de_passe, :prenom, :nom, :roles, TRUE, :jeton, :expiration)
+                ) VALUES (:email, :mot_de_passe, :prenom, :nom, :roles, TRUE, :jeton, {$expiration})
                 SQL,
             [
                 'email' => $email,
@@ -56,9 +60,7 @@ final class PurgerJetonsReinitialisationExpiresCommandTest extends KernelTestCas
                 'nom' => 'Maintenance',
                 'roles' => '["ROLE_GESTIONNAIRE"]',
                 'jeton' => hash('sha256', $email),
-                'expiration' => new \DateTimeImmutable($expiration),
             ],
-            ['expiration' => 'datetime_immutable'],
         );
     }
 
