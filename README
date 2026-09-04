@@ -49,6 +49,13 @@ s’adapte à la date du jour et fournit notamment ces comptes, tous avec le mot
 
 Ces identifiants sont strictement réservés aux environnements `dev` et `test`.
 
+## Documentation utilisateur
+
+Le [`Guide utilisateur Scout Market`](output/pdf/guide-utilisateur-scout-market.pdf)
+présente les parcours Gestionnaire pour les fournisseurs, les denrées et leurs
+conditionnements, les recettes et menus, les unités participantes, les mouvements de
+stock, les deux modes de distribution et le calcul des commandes.
+
 Commandes courantes :
 
 ```shell
@@ -99,21 +106,41 @@ et `openssl` sur l’hôte.
 
 ## Intégration continue
 
-Le workflow `.github/workflows/ci.yaml` s’exécute sur les pull requests et les pushs
-visant `dev` ou `main`, ainsi que manuellement. `dev` porte la recette et `main` la
-production. Le workflow valide Docker Compose, Composer, Liquibase et Doctrine,
-audite les dépendances, compile les assets, exécute PHPStan, le contrôle de style,
-PHPUnit, les contrôles d’accessibilité et les parcours E2E.
+Le workflow `.github/workflows/ci.yaml` s’exécute une seule fois sur chaque pull
+request visant `dev`. Il valide Docker Compose, Composer, Liquibase et Doctrine,
+audite les dépendances, recherche les secrets versionnés, compile les assets,
+exécute PHPStan, le contrôle de style, PHPUnit, Axe et les parcours Playwright,
+puis analyse avec Trivy les cinq images finales. Les résultats Playwright sont
+conservés sept jours en cas d’échec.
 
-Sur `main` uniquement, un job indépendant construit la surcharge de production et
-vérifie les rôles PostgreSQL, le durcissement des conteneurs, la sauvegarde chiffrée,
-sa restauration dans une base jetable et la maintenance quotidienne. Les secrets
-utilisés par la CI sont générés pour le run et masqués dans les journaux.
+Une pull request visant `main` exécute uniquement
+`.github/workflows/production-smoke.yaml`, dont le statut est
+`Configuration de production`. Ce scénario vérifie les rôles PostgreSQL, les
+healthchecks et le durcissement des conteneurs, la sauvegarde chiffrée, sa
+restauration dans une base jetable et la maintenance quotidienne. Les secrets
+utilisés sont générés pour le run et masqués dans les journaux.
 
 ## Livraison et exploitation
 
-Le projet reste livré manuellement. La CI valide chaque changement ; la publication
-automatique d’images vers un registre n’est pas activée :
+Le projet reste livré manuellement. Chaque commit de `main` publie une seule fois
+les cinq images candidates dans GHCR sous `sha-<commit>`, avec SBOM, provenance,
+cache BuildKit et signature Sigstore sans clé. Les candidates sont testées par
+digest avec la configuration de production. Un tag signé `vX.Y.Z` attend la
+validation du même commit puis promeut exactement ces digests sans reconstruction.
+GitHub ne se connecte jamais au serveur.
+
+L’opérateur renseigne `.env.release` à partir de `.env.release.example`, vérifie
+les signatures et démarre les images immuables avec les commandes `make release-*` :
+
+```bash
+make release-verify
+make release-pull
+make release-backup-now
+make release-db-status
+make release-db-update
+make release-up
+make release-ps
+```
 
 - [`docs/deploiement-simple.md`](docs/deploiement-simple.md) : première mise en ligne
   sans `age`, sans registre et avec un seul rôle PostgreSQL ;

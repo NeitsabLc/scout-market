@@ -1,0 +1,30 @@
+services:
+  php:
+    image: "${SCOUT_RELEASE_PHP_IMAGE:?SCOUT_RELEASE_PHP_IMAGE doit contenir une reference GHCR par digest}"
+    build: !reset null
+    pull_policy: missing
+
+  nginx:
+    image: "${SCOUT_RELEASE_NGINX_IMAGE:?SCOUT_RELEASE_NGINX_IMAGE doit contenir une reference GHCR par digest}"
+    build: !reset null
+    pull_policy: missing
+
+  maintenance:
+    image: "${SCOUT_RELEASE_PHP_IMAGE:?SCOUT_RELEASE_PHP_IMAGE doit contenir une reference GHCR par digest}"
+    build: !reset null
+    pull_policy: missing
+
+  backup:
+    image: "${SCOUT_RELEASE_BACKUP_IMAGE:?SCOUT_RELEASE_BACKUP_IMAGE doit contenir une reference GHCR par digest}"
+    build: !reset null
+    pull_policy: missing
+
+  database:
+    image: "${SCOUT_RELEASE_POSTGRES_IMAGE:?SCOUT_RELEASE_POSTGRES_IMAGE doit contenir une reference GHCR par digest}"
+    build: !reset null
+    pull_policy: missing
+
+  liquibase:
+    image: "${SCOUT_RELEASE_LIQUIBASE_IMAGE:?SCOUT_RELEASE_LIQUIBASE_IMAGE doit contenir une reference GHCR par digest}"
+    build: !reset null
+    pull_policy: missing

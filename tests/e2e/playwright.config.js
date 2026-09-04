@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,
-  reporter: 'list',
+  reporter: process.env.CI ? [['github'], ['line']] : 'list',
   outputDir: '../../test-results/e2e',
   use: {
     baseURL: process.env.APP_BASE_URL ?? 'http://127.0.0.1:8080',
