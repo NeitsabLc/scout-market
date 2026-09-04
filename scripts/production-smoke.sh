@@ -148,8 +148,11 @@ nginx_container=$(compose ps --quiet nginx)
 test "$(docker inspect --format '{{.State.Health.Status}}' "$database_container")" = healthy
 test "$(docker inspect --format '{{.State.Health.Status}}' "$php_container")" = healthy
 test "$(docker inspect --format '{{.State.Health.Status}}' "$nginx_container")" = healthy
-docker inspect --format '{{json .HostConfig.PortBindings}}' "$database_container" \
-    | grep -q '"5432/tcp".*"HostIp":"127.0.0.1"'
+if docker inspect --format '{{json .HostConfig.PortBindings}}' "$database_container" \
+    | grep -q '"HostPort"'; then
+    echo "Le port PostgreSQL ne doit pas être publié en production." >&2
+    exit 1
+fi
 docker inspect --format '{{json .HostConfig.PortBindings}}' "$nginx_container" \
     | grep -q '"HostIp":"127.0.0.1"'
 
