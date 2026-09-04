@@ -35,3 +35,4 @@ for variable in \
 done
 
 echo "POSTGRES_HEALTHCHECK_USER=scout_market_admin" >> "$GITHUB_ENV"
+echo "POSTGRES_HBA_FILE=./docker/postgres/pg_hba.prod.conf.example" >> "$GITHUB_ENV"
