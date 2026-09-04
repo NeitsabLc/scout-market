@@ -11,7 +11,11 @@ case "${COMPOSE_PROJECT_NAME:-}" in
 esac
 
 compose() {
-    docker compose -f compose.yaml -f compose.prod.yaml "$@"
+    if [ "${USE_RELEASE_IMAGES:-0}" = "1" ]; then
+        docker compose -f compose.yaml -f compose.prod.yaml -f compose.release.yaml "$@"
+    else
+        docker compose -f compose.yaml -f compose.prod.yaml "$@"
+    fi
 }
 
 lire_variable_env() {
@@ -65,7 +69,7 @@ nettoyer() {
     trap - EXIT INT TERM
     if [ "$statut" -ne 0 ]; then
         compose ps >&2 || true
-        compose logs --no-color --tail=200 database php nginx backup >&2 || true
+        compose logs --no-color --tail=200 database php nginx maintenance backup >&2 || true
     fi
     compose down --volumes --remove-orphans >/dev/null 2>&1 || true
     rm -rf "$repertoire_temporaire"
@@ -96,7 +100,11 @@ mkdir -p "$BACKUP_DIR"
 chmod 0777 "$BACKUP_DIR"
 
 compose config --quiet
-compose build php nginx database liquibase backup
+if [ "${USE_RELEASE_IMAGES:-0}" = "1" ]; then
+    compose pull php nginx database liquibase backup
+else
+    compose build php nginx database liquibase backup
+fi
 
 fichier_identite="$repertoire_temporaire/identity.txt"
 backup_image=${SMOKE_BACKUP_IMAGE:-scout-market-backup:${APP_IMAGE_TAG:-local}}
@@ -132,7 +140,21 @@ compose exec --no-TTY database sh -ec '
         --set=ON_ERROR_STOP=1 \
         --command="CREATE TABLE scout_market.ci_migrator_privilege_check (id integer); DROP TABLE scout_market.ci_migrator_privilege_check"
 '
-compose up --detach php nginx
+compose up --detach --wait --wait-timeout 60 php nginx
+
+database_container=$(compose ps --quiet database)
+php_container=$(compose ps --quiet php)
+nginx_container=$(compose ps --quiet nginx)
+test "$(docker inspect --format '{{.State.Health.Status}}' "$database_container")" = healthy
+test "$(docker inspect --format '{{.State.Health.Status}}' "$php_container")" = healthy
+test "$(docker inspect --format '{{.State.Health.Status}}' "$nginx_container")" = healthy
+if docker inspect --format '{{json .HostConfig.PortBindings}}' "$database_container" \
+    | grep -q '"HostPort"'; then
+    echo "Le port PostgreSQL ne doit pas être publié en production." >&2
+    exit 1
+fi
+docker inspect --format '{{json .HostConfig.PortBindings}}' "$nginx_container" \
+    | grep -q '"HostIp":"127.0.0.1"'
 
 curl --fail --silent --show-error --retry 30 --retry-delay 2 --retry-all-errors \
     --output /dev/null \
@@ -166,10 +188,11 @@ compose exec --no-TTY php php bin/console cache:warmup --env=prod --no-debug
 compose exec --no-TTY php php bin/console dbal:run-sql \
     "SELECT current_database(), current_user, current_schema()"
 
-compose --profile tools create backup liquibase
+compose --profile tools create maintenance backup liquibase
 assert_container_hardened php www-data 536870912 1000000000 128
 assert_container_hardened nginx nginx 134217728 500000000 64
 assert_container_hardened database postgres 1073741824 2000000000 256
+assert_container_hardened maintenance www-data 268435456 500000000 64
 assert_container_hardened backup postgres 536870912 1000000000 128
 assert_container_hardened liquibase liquibase 536870912 1000000000 128
 
@@ -238,6 +261,26 @@ compose run --rm --no-deps \
     --volume "$fichier_identite:/run/identity.txt:ro" \
     --entrypoint /usr/local/bin/scout-market-verify-backup \
     backup "/backups/$(basename "$archive_base")"
+
+compose exec --no-TTY database sh -ec '
+    PGPASSWORD="$POSTGRES_APP_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_APP_USER" --dbname="$POSTGRES_DB" \
+        --set=ON_ERROR_STOP=1 \
+        --command="UPDATE scout_market.utilisateur
+            SET jeton_reinitialisation = repeat('\''a'\'', 64),
+                expiration_jeton_reinitialisation = CURRENT_TIMESTAMP - INTERVAL '\''1 hour'\''
+            WHERE email = '\''saisie-consommation@scout-market.local'\''"
+'
+compose run --rm --env MAINTENANCE_ONCE=1 maintenance
+compose exec --no-TTY database sh -ec '
+    resultat=$(PGPASSWORD="$POSTGRES_APP_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_APP_USER" --dbname="$POSTGRES_DB" \
+        --tuples-only --no-align --set=ON_ERROR_STOP=1 \
+        --command="SELECT count(*) FROM scout_market.utilisateur
+            WHERE expiration_jeton_reinitialisation < CURRENT_TIMESTAMP
+              AND jeton_reinitialisation IS NOT NULL")
+    test "$resultat" = "0"
+'
 
 compose exec --no-TTY database scout-market-harden-roles finalize
 

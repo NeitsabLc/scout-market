@@ -41,6 +41,12 @@ services:
     mem_limit: 512m
     cpus: 1.0
     pids_limit: 128
+    healthcheck:
+      test: [CMD, php, -r, 'exit(false === @fsockopen("127.0.0.1", 9000) ? 1 : 0);']
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
 
   nginx:
     logging: *production-logging
@@ -53,7 +59,7 @@ services:
         PHP_VERSION: "${PHP_VERSION}"
         PHP_IMAGE_DIGEST: "${PHP_IMAGE_DIGEST:-sha256:9467f10bf42897dec0abb73ee20c747ebd45463ec9d6fcc4044cb83eba6dade7}"
         NGINX_VERSION: "${NGINX_VERSION}"
-        NGINX_IMAGE_DIGEST: "${NGINX_IMAGE_DIGEST:-sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de}"
+        NGINX_IMAGE_DIGEST: "${NGINX_IMAGE_DIGEST:-sha256:dc5069ad14f19660b141b21236140b91656bf89bbc3e2417c70ae650cd66104c}"
     read_only: true
     user: nginx
     init: true
@@ -69,6 +75,66 @@ services:
     mem_limit: 128m
     cpus: 0.5
     pids_limit: 64
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          wget --quiet --output-document=/dev/null
+          --header='Host: ${APP_HOSTNAME:-localhost}'
+          http://127.0.0.1:8080/login
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    depends_on:
+      php:
+        condition: service_healthy
+
+  maintenance:
+    logging: *production-logging
+    restart: unless-stopped
+    image: "scout-market-php-production:${APP_IMAGE_TAG:-local}"
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: php-production
+      args:
+        PHP_VERSION: "${PHP_VERSION}"
+        PHP_IMAGE_DIGEST: "${PHP_IMAGE_DIGEST:-sha256:9467f10bf42897dec0abb73ee20c747ebd45463ec9d6fcc4044cb83eba6dade7}"
+    working_dir: /var/www/app
+    entrypoint: ["scout-market-maintenance"]
+    read_only: true
+    user: www-data
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      APP_SECRET: "${APP_SECRET:?APP_SECRET doit etre renseigne en production}"
+      DEFAULT_URI: "${DEFAULT_URI:-http://localhost:8080}"
+      APP_PUBLIC_URL: "${APP_PUBLIC_URL:-http://localhost:8080}"
+      MAILER_DSN: "${MAILER_DSN:-null://null}"
+      MAILER_FROM_EMAIL: "${MAILER_FROM_EMAIL:-no-reply@neitsab.net}"
+      MAILER_FROM_NAME: "${MAILER_FROM_NAME:-Scout Market}"
+      MESSENGER_TRANSPORT_DSN: "${MESSENGER_TRANSPORT_DSN:-sync://}"
+      DATABASE_URL: "postgresql://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=18&charset=utf8"
+      TRUSTED_HOST_PATTERN: "${TRUSTED_HOST_PATTERN:-^(localhost|127\\.0\\.0\\.1)$}"
+      TRUSTED_PROXIES: "${TRUSTED_PROXIES:-127.0.0.1}"
+    tmpfs:
+      - /tmp:mode=1777
+      - /var/www/app/var/cache:mode=0770,uid=33,gid=33
+      - /var/www/app/var/log:mode=0770,uid=33,gid=33
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 64
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - scout_market
 
   backup:
     profiles:

@@ -49,6 +49,13 @@ s’adapte à la date du jour et fournit notamment ces comptes, tous avec le mot
 
 Ces identifiants sont strictement réservés aux environnements `dev` et `test`.
 
+## Documentation utilisateur
+
+Le [`Guide utilisateur Scout Market`](output/pdf/guide-utilisateur-scout-market.pdf)
+présente les parcours Gestionnaire pour les fournisseurs, les denrées et leurs
+conditionnements, les recettes et menus, les unités participantes, les mouvements de
+stock, les deux modes de distribution et le calcul des commandes.
+
 Commandes courantes :
 
 ```shell
@@ -93,13 +100,47 @@ make production-smoke
 ```
 
 `make test` recrée uniquement `scout_market_test`. `make production-smoke` construit
-et vérifie une installation de production jetable, y compris les rôles PostgreSQL et
-une sauvegarde chiffrée restaurée ; il requiert aussi `jq` et `openssl` sur l’hôte.
+et vérifie une installation de production jetable, notamment les rôles PostgreSQL,
+une sauvegarde chiffrée restaurée et le cycle de maintenance ; il requiert aussi `jq`
+et `openssl` sur l’hôte.
+
+## Intégration continue
+
+Le workflow `.github/workflows/ci.yaml` s’exécute une seule fois sur chaque pull
+request visant `dev`. Il valide Docker Compose, Composer, Liquibase et Doctrine,
+audite les dépendances, recherche les secrets versionnés, compile les assets,
+exécute PHPStan, le contrôle de style, PHPUnit, Axe et les parcours Playwright,
+puis analyse avec Trivy les cinq images finales. Les résultats Playwright sont
+conservés sept jours en cas d’échec.
+
+Une pull request visant `main` exécute uniquement
+`.github/workflows/production-smoke.yaml`, dont le statut est
+`Configuration de production`. Ce scénario vérifie les rôles PostgreSQL, les
+healthchecks et le durcissement des conteneurs, la sauvegarde chiffrée, sa
+restauration dans une base jetable et la maintenance quotidienne. Les secrets
+utilisés sont générés pour le run et masqués dans les journaux.
 
 ## Livraison et exploitation
 
-Le projet est livré manuellement depuis les sources, sans CI et sans registre d’images
-pour le moment :
+Le projet reste livré manuellement. Chaque commit de `main` publie une seule fois
+les cinq images candidates dans GHCR sous `sha-<commit>`, avec SBOM, provenance,
+cache BuildKit et signature Sigstore sans clé. Les candidates sont testées par
+digest avec la configuration de production. Un tag signé `vX.Y.Z` attend la
+validation du même commit puis promeut exactement ces digests sans reconstruction.
+GitHub ne se connecte jamais au serveur.
+
+L’opérateur renseigne `.env.release` à partir de `.env.release.example`, vérifie
+les signatures et démarre les images immuables avec les commandes `make release-*` :
+
+```bash
+make release-verify
+make release-pull
+make release-backup-now
+make release-db-status
+make release-db-update
+make release-up
+make release-ps
+```
 
 - [`docs/deploiement-simple.md`](docs/deploiement-simple.md) : première mise en ligne
   sans `age`, sans registre et avec un seul rôle PostgreSQL ;
@@ -109,3 +150,8 @@ pour le moment :
 
 Ne jamais versionner `.env`, la clé privée `age`, une sauvegarde ou un export de
 production. Les exemples de configuration ne contiennent aucun secret utilisable.
+
+En production, `maintenance` purge chaque jour les jetons de réinitialisation de mot
+de passe expirés. Il ne supprime ni les mouvements de stock ni leur historique
+d’audit. Le service `backup`, activé explicitement avec le profil homonyme, produit
+chaque jour une sauvegarde PostgreSQL chiffrée et conserve sept jours.

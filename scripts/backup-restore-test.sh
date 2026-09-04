@@ -16,4 +16,4 @@ export POSTGRES_HEALTHCHECK_PASSWORD="$(secret 24)"
 export NGINX_HOST_PORT="${NGINX_HOST_PORT:-18083}"
 export POSTGRES_HOST_PORT="${POSTGRES_HOST_PORT:-15437}"
 
-exec ./scripts/production-smoke.sh
+exec ./scripts/ci-production-smoke.sh

@@ -1,7 +1,7 @@
 ARG PHP_VERSION=8.4
 ARG PHP_IMAGE_DIGEST=sha256:9467f10bf42897dec0abb73ee20c747ebd45463ec9d6fcc4044cb83eba6dade7
-ARG NGINX_VERSION=1.29-alpine
-ARG NGINX_IMAGE_DIGEST=sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+ARG NGINX_VERSION=1.30.4-alpine
+ARG NGINX_IMAGE_DIGEST=sha256:dc5069ad14f19660b141b21236140b91656bf89bbc3e2417c70ae650cd66104c
 
 FROM php:${PHP_VERSION}-fpm@${PHP_IMAGE_DIGEST} AS php-base
 
@@ -90,7 +90,10 @@ RUN : > .env \
 
 FROM php-base AS php-production
 
+COPY docker/php/maintenance.sh /usr/local/bin/scout-market-maintenance
 COPY --from=app-builder --chown=www-data:www-data /var/www/app /var/www/app
+
+RUN chmod 0755 /usr/local/bin/scout-market-maintenance
 
 USER www-data
 
