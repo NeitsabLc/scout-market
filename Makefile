@@ -2,6 +2,8 @@
 
 DOCKER_COMPOSE := docker compose
 DOCKER_COMPOSE_PROD := docker compose -f compose.yaml -f compose.prod.yaml
+RELEASE_ENV ?= .env.release
+DOCKER_COMPOSE_RELEASE := docker compose --env-file .env --env-file $(RELEASE_ENV) -f compose.yaml -f compose.prod.yaml -f compose.release.yaml
 PHP := $(DOCKER_COMPOSE) exec php
 PHP_RUN := $(DOCKER_COMPOSE) run --rm php
 PHP_TEST := $(DOCKER_COMPOSE) exec php sh -c 'DATABASE_URL="$$DATABASE_TEST_URL" php bin/phpunit'
@@ -226,7 +228,44 @@ backup-restore-test: ## Chiffrer puis restaurer la base dans un environnement je
 	./scripts/backup-restore-test.sh
 
 .PHONY: production-smoke
-production-smoke: backup-restore-test ## Vérifier une installation de production jetable complète
+production-smoke: ## Vérifier une installation de production jetable complète
+	COMPOSE_PROJECT_NAME=scout-market-smoke-local ./scripts/ci-production-smoke.sh
+
+.PHONY: release-config
+release-config: ## Valider la configuration Compose d'une livraison par digest
+	$(DOCKER_COMPOSE_RELEASE) config --quiet
+
+.PHONY: release-verify
+release-verify: ## Vérifier les digests et signatures Sigstore
+	set -a; . ./$(RELEASE_ENV); set +a; ./scripts/verify-release-images.sh
+
+.PHONY: release-pull
+release-pull: release-config release-verify ## Télécharger les cinq images vérifiées
+	$(DOCKER_COMPOSE_RELEASE) --profile tools pull php nginx database liquibase backup
+
+.PHONY: release-backup-now
+release-backup-now: release-config ## Sauvegarder la base avant une livraison
+	$(DOCKER_COMPOSE_RELEASE) run --rm --no-deps -e BACKUP_ONCE=1 backup
+
+.PHONY: release-db-status
+release-db-status: release-config ## Contrôler les migrations avec l'image livrée
+	$(DOCKER_COMPOSE_RELEASE) --profile tools run --rm liquibase status
+
+.PHONY: release-db-update
+release-db-update: release-config ## Appliquer les migrations avec l'image livrée
+	$(DOCKER_COMPOSE_RELEASE) --profile tools run --rm liquibase update
+
+.PHONY: release-up
+release-up: release-pull ## Démarrer exactement les images vérifiées
+	$(DOCKER_COMPOSE_RELEASE) up -d --no-build --wait --wait-timeout 120 database php nginx backup maintenance
+
+.PHONY: release-ps
+release-ps: ## Afficher l'état des conteneurs issus des images GHCR
+	$(DOCKER_COMPOSE_RELEASE) ps
+
+.PHONY: release-maintenance-now
+release-maintenance-now: release-config ## Exécuter un cycle de maintenance avec l'image livrée
+	$(DOCKER_COMPOSE_RELEASE) run --rm -e MAINTENANCE_ONCE=1 maintenance
 
 .PHONY: maintenance-now
 maintenance-now: ## Exécuter immédiatement un cycle de maintenance de production

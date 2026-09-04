@@ -83,3 +83,15 @@ sauvegardes PostgreSQL sont chiffrées avec `age`.
 Avant chaque livraison : validation Liquibase, mapping Doctrine, style PHP, analyse
 PHPStan, PHPUnit sur une base recréée, tests Playwright E2E et accessibilité, validation
 Compose de production et smoke test de production avec restauration de sauvegarde.
+
+La CI de qualité s’exécute uniquement sur les pull requests visant `dev` et
+publie le statut stable `Qualite et tests`. Une pull request visant `main`
+exécute uniquement `production-smoke.yaml` et publie `Configuration de
+production`, afin d’éviter les doublons et de toujours créer le statut requis.
+Les deux branches doivent exiger leur statut avec une base strictement à jour.
+
+Chaque commit de `main` construit et signe avec Sigstore cinq images candidates
+GHCR immuables, accompagnées de leur SBOM et provenance, puis teste ces digests.
+Un tag signé `vX.Y.Z` attend la validation candidate du même SHA et promeut les
+mêmes digests sans reconstruction. La livraison sur le serveur reste manuelle
+via `.env.release`, `compose.release.yaml` et les commandes `make release-*`.
