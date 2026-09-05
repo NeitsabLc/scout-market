@@ -1,80 +1,67 @@
-# Livrer Scout Market avec GitHub et sa CI
+# Livrer Scout Market avec GitHub et le homelab
 
-Le dépôt de référence est <https://github.com/NeitsabLc/scout-market>. La branche
-`dev` sert à la recette et reçoit les évolutions en premier ; `main` représente la
-production. Le workflow `.github/workflows/ci.yaml` contrôle les deux branches. Le
-smoke test complet de production ne s’exécute que sur `main`. Les images
-de production restent construites manuellement sur le serveur tant que la publication
-GHCR n’est pas explicitement activée.
+Le dépôt applicatif de référence est
+<https://github.com/NeitsabLc/scout-market>. Les branches de travail sont intégrées
+par pull request dans `main`, qui doit rester déployable.
 
-## 1. Préparer le dépôt GitHub
+## Intégration continue
 
-Le dépôt doit être vide lors du premier envoi : ne pas ajouter de README, licence ou
-`.gitignore` depuis l’interface. Pour une connexion SSH, ajouter la clé publique du
-poste au compte GitHub puis vérifier :
+Chaque pull request vers `main` exécute les contrôles de qualité, les tests
+fonctionnels et navigateur, les audits de dépendances, les analyses Trivy et un
+smoke test complet de la configuration de production.
 
-```shell
-ssh -T git@github.com
-```
+Les titres suivent Conventional Commits :
 
-Dans **Settings > Rules > Rulesets**, protéger les branches :
+- `fix:` déclenche une version corrective ;
+- `feat:` déclenche une version mineure ;
+- `type!:` ou `BREAKING CHANGE` déclenche une version majeure.
 
-- bloquer les suppressions et les force-push ;
-- exiger une pull request vers `dev`, puis une pull request de `dev` vers `main` ;
-- exiger le contrôle `Qualite et tests` avant fusion lorsque l’offre GitHub permet les
-  rulesets sur ce dépôt privé ;
-- exiger également `Configuration de production` sur `main` lorsque l’offre GitHub le
-  permet.
+Dependabot utilise `fix(deps):` ou `fix(deps-dev):`, afin que ses mises à jour
+produisent également une version corrective.
 
-Un second ruleset peut protéger les tags `v*` contre la modification et la suppression.
+## Recette automatique
 
-## 2. Créer l’historique Scout Market neuf
+Après chaque fusion dans `main`, GitHub construit les cinq images `php`, `nginx`,
+`postgres`, `liquibase` et `backup`. Elles sont publiées dans GHCR sous le tag
+immuable `sha-<commit>`, accompagnées d’un SBOM, d’une provenance et d’une signature
+Sigstore sans clé.
 
-Le dossier de travail provient de Campement, mais Scout Market doit commencer avec un
-historique indépendant. Conserver l’ancien `.git` hors du projet avant d’initialiser :
+Les images candidates sont testées par digest. Après validation, le dépôt privé
+`NeitsabLc/homelab-deploy` reçoit l’événement `scout-market-candidate-ready` et
+déploie exactement ces digests sur `web02`. Les sauvegardes planifiées restent
+désactivées en recette.
 
-```shell
-cd /chemin/vers/scout-market
-mv .git ../campement-historique-git
-git init -b main
-git add .
-git status --short
-git diff --cached --check
-git commit -m "Initialisation de Scout Market"
-git remote add origin git@github.com:NeitsabLc/scout-market.git
-git push -u origin main
-```
+## Préparer une version
 
-Avant le commit, vérifier impérativement que `.env`, les sauvegardes, exports et clés
-privées n’apparaissent pas dans `git status`. Le script Campement local
-`scripts/supprimer-mouvements-stock-sejour.sh` est volontairement ignoré.
+Release Please maintient une pull request de version sur `main`. Sa fusion met à
+jour `CHANGELOG.md`, `version.txt` et `app.version`. Elle ne crée volontairement ni
+release GitHub ni tag.
 
-## 3. Publier une version
-
-Mettre à jour `CHANGELOG.md` et `app.version`, vérifier que la CI de `main` est verte,
-puis créer un tag annoté depuis `main` :
+Après validation fonctionnelle de la recette, créer un tag annoté et signé sur le
+commit concerné :
 
 ```shell
 git switch main
-git status --short
-git tag -a v0.1.0 -m "Scout Market 0.1.0"
-git push origin main
-git push origin v0.1.0
+git pull --ff-only origin main
+version=$(cat version.txt)
+git tag -s "v$version" -m "Scout Market $version"
+git push origin "v$version"
 ```
 
-Sur GitHub, ouvrir **Releases > Draft a new release**, choisir le tag `v0.1.0`, reprendre
-les notes du changelog et publier. La release identifie exactement le code à déployer.
-Tant que la publication GHCR n’est pas activée, elle ne contient pas d’image Docker
-préconstruite.
+Le workflow de publication refuse un tag non signé, un tag extérieur à `main` ou
+une version différente de `version.txt`. Il applique ensuite le tag de version aux
+digests candidats, sans reconstruire les images.
 
-## 4. Convention pour la suite
+## Promotion en production
 
-- `dev` reste la branche de recette et reçoit les branches courtes ;
-- `main` reste toujours déployable et ne reçoit que les changements validés sur
-  `dev` ;
-- chaque livraison porte un tag `vMAJEUR.MINEUR.CORRECTIF` immuable ;
-- le serveur déploie un tag explicite, jamais une branche flottante ;
-- tout secret reste dans le `.env` du serveur ou dans un gestionnaire de secrets.
+La production se déclenche manuellement depuis le workflow `Promouvoir Scout Market
+en production` de `homelab-deploy`. L’opérateur saisit la version sans `v` et la
+confirmation `production-VERSION`.
 
-La procédure serveur est dans
-[`exploitation-production.md`](exploitation-production.md).
+Le workflow vérifie le tag Git signé, résout les cinq références par digest et exige
+qu’elles correspondent exactement au candidat testé en recette. `web01` crée une
+sauvegarde PostgreSQL chiffrée avant Liquibase, déploie les images et conserve le
+service de sauvegarde planifiée actif.
+
+Les secrets applicatifs, la clé privée `age` et les sauvegardes ne doivent jamais
+être versionnés.

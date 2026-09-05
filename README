@@ -106,15 +106,16 @@ et `openssl` sur l’hôte.
 
 ## Intégration continue
 
-Le workflow `.github/workflows/ci.yaml` s’exécute une seule fois sur chaque pull
-request visant `dev`. Il valide Docker Compose, Composer, Liquibase et Doctrine,
+Le workflow `.github/workflows/ci.yaml` s’exécute sur chaque pull request visant
+`main`. Il contrôle aussi le titre Conventional Commit, puis valide Docker Compose,
+Composer, Liquibase et Doctrine,
 audite les dépendances, recherche les secrets versionnés, compile les assets,
 exécute PHPStan, le contrôle de style, PHPUnit, Axe et les parcours Playwright,
 puis analyse avec Trivy les cinq images finales. Les résultats Playwright sont
 conservés sept jours en cas d’échec.
 
-Une pull request visant `main` exécute uniquement
-`.github/workflows/production-smoke.yaml`, dont le statut est
+La même pull request exécute également `.github/workflows/production-smoke.yaml`,
+dont le statut est
 `Configuration de production`. Ce scénario vérifie les rôles PostgreSQL, les
 healthchecks et le durcissement des conteneurs, la sauvegarde chiffrée, sa
 restauration dans une base jetable et la maintenance quotidienne. Les secrets
@@ -122,15 +123,22 @@ utilisés sont générés pour le run et masqués dans les journaux.
 
 ## Livraison et exploitation
 
-Le projet reste livré manuellement. Chaque commit de `main` publie une seule fois
-les cinq images candidates dans GHCR sous `sha-<commit>`, avec SBOM, provenance,
-cache BuildKit et signature Sigstore sans clé. Les candidates sont testées par
-digest avec la configuration de production. Un tag signé `vX.Y.Z` attend la
-validation du même commit puis promeut exactement ces digests sans reconstruction.
-GitHub ne se connecte jamais au serveur.
+Chaque commit de `main` publie une seule fois les cinq images candidates dans GHCR
+sous `sha-<commit>`, avec SBOM, provenance, cache BuildKit et signature Sigstore
+sans clé. Les candidates sont testées par digest avec la configuration de production,
+puis le dépôt privé `homelab-deploy` déploie automatiquement ces mêmes digests sur
+`web02`. Le service de sauvegarde n’est pas activé en recette.
 
-L’opérateur renseigne `.env.release` à partir de `.env.release.example`, vérifie
-les signatures et démarre les images immuables avec les commandes `make release-*` :
+Release Please calcule la prochaine version à partir des titres et commits
+Conventional Commits. La fusion de sa PR met à jour `version.txt`, le journal et la
+version affichée. Un tag SSH signé `vX.Y.Z` promeut alors les images déjà testées
+vers le tag de version, sans reconstruction.
+
+La production est déclenchée manuellement depuis `homelab-deploy`, avec la version
+et une confirmation explicite. Le workflow vérifie le tag signé et l’égalité des
+digests, crée une sauvegarde chiffrée avant Liquibase, puis déploie sur `web01`.
+
+Les commandes `make release-*` restent disponibles pour le diagnostic manuel :
 
 ```bash
 make release-verify
