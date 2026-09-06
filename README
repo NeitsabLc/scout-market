@@ -131,12 +131,14 @@ puis le dépôt privé `homelab-deploy` déploie automatiquement ces mêmes dige
 
 Release Please calcule la prochaine version à partir des titres et commits
 Conventional Commits. La fusion de sa PR met à jour `version.txt`, le journal et la
-version affichée. Un tag SSH signé `vX.Y.Z` promeut alors les images déjà testées
-vers le tag de version, sans reconstruction.
+version affichée, puis publie automatiquement la GitHub Release et son tag `vX.Y.Z`.
+Cette publication promeut alors les images déjà testées vers le tag de version,
+sans reconstruction. Une reprise manuelle par numéro de version reste disponible
+dans le workflow `Publication des images`.
 
 La production est déclenchée manuellement depuis `homelab-deploy`, avec la version
-et une confirmation explicite. Le workflow vérifie le tag signé et l’égalité des
-digests, crée une sauvegarde chiffrée avant Liquibase, puis déploie sur `web01`.
+et une confirmation explicite. Le workflow vérifie la release publiée et l’égalité
+des digests, crée une sauvegarde chiffrée avant Liquibase, puis déploie sur `web01`.
 
 Les commandes `make release-*` restent disponibles pour le diagnostic manuel :
 
