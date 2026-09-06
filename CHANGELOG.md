@@ -1,5 +1,15 @@
 # Journal des modifications
 
+## [0.1.6](https://github.com/NeitsabLc/scout-market/compare/v0.1.5...v0.1.6) (2026-09-06)
+
+
+### Corrections
+
+* **build:** actualiser le paquet age Alpine ([11c7ea5](https://github.com/NeitsabLc/scout-market/commit/11c7ea5cd28a5e517a9c0b77dc746bd14a204ae7))
+* **release:** aligner les promotions automatiques ([2937773](https://github.com/NeitsabLc/scout-market/commit/2937773d0157a5dd7f5a03c71b97f2a9494b331b))
+* **release:** automatiser la livraison vers le homelab ([e8f18f5](https://github.com/NeitsabLc/scout-market/commit/e8f18f5322a2920c912f7041651d5f04b6f5db78))
+* **release:** automatiser la livraison vers le homelab ([3e5e562](https://github.com/NeitsabLc/scout-market/commit/3e5e56225f02414b0141c30281ecdf91607dd70d))
+
 ## 0.1.5 — Administration des comptes
 
 - gestion des comptes utilisateurs réservée aux administrateurs ;
