@@ -123,18 +123,21 @@ utilisés sont générés pour le run et masqués dans les journaux.
 
 ## Livraison et exploitation
 
-Chaque commit de `main` publie une seule fois les cinq images candidates dans GHCR
-sous `sha-<commit>`, avec SBOM, provenance, cache BuildKit et signature Sigstore
-sans clé. Les candidates sont testées par digest avec la configuration de production,
-puis le dépôt privé `homelab-deploy` déploie automatiquement ces mêmes digests sur
-`web02`. Le service de sauvegarde n’est pas activé en recette.
+Les commits ordinaires de `main` ne publient aucune image. La fusion d'une pull
+request de version crée la GitHub Release, puis construit une seule fois les cinq
+images candidates dans GHCR sous `sha-<commit>`, avec SBOM, provenance, cache
+BuildKit et signature Sigstore sans clé. Les candidates sont testées par digest
+avec la configuration de production, promues vers le tag de version sans
+reconstruction, puis le dépôt privé `homelab-deploy` déploie automatiquement ces
+mêmes digests sur `web02`. Le service de sauvegarde n’est pas activé en recette.
 
 Release Please calcule la prochaine version à partir des titres et commits
 Conventional Commits. La fusion de sa PR met à jour `version.txt`, le journal et la
 version affichée, puis publie automatiquement la GitHub Release et son tag `vX.Y.Z`.
-Cette publication promeut alors les images déjà testées vers le tag de version,
-sans reconstruction. Une reprise manuelle par numéro de version reste disponible
-dans le workflow `Publication des images`.
+Cette publication lance la construction, les tests, la promotion sans reconstruction
+et le déploiement en recette. Une reprise manuelle par numéro de version reste
+disponible dans le workflow `Publication des images de version` pour retester et
+repromouvoir les candidats immuables existants.
 
 La production est déclenchée manuellement depuis `homelab-deploy`, avec la version
 et une confirmation explicite. Le workflow vérifie la release publiée et l’égalité

@@ -90,8 +90,8 @@ exécute uniquement `production-smoke.yaml` et publie `Configuration de
 production`, afin d’éviter les doublons et de toujours créer le statut requis.
 Les deux branches doivent exiger leur statut avec une base strictement à jour.
 
-Chaque commit de `main` construit et signe avec Sigstore cinq images candidates
-GHCR immuables, accompagnées de leur SBOM et provenance, puis teste ces digests.
-Un tag signé `vX.Y.Z` attend la validation candidate du même SHA et promeut les
-mêmes digests sans reconstruction. La livraison sur le serveur reste manuelle
-via `.env.release`, `compose.release.yaml` et les commandes `make release-*`.
+Les commits ordinaires de `main` ne publient aucune image. La publication d'une
+release `vX.Y.Z` construit et signe avec Sigstore cinq images candidates GHCR
+immuables, accompagnées de leur SBOM et provenance, puis teste ces digests. Le
+même workflow les promeut sans reconstruction et déclenche leur déploiement en
+recette. La production reste une promotion manuelle via `homelab-deploy`.

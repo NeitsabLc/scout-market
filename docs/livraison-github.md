@@ -19,14 +19,16 @@ Les titres suivent Conventional Commits :
 Dependabot utilise `fix(deps):` ou `fix(deps-dev):`, afin que ses mises à jour
 produisent également une version corrective.
 
-## Recette automatique
+## Recette d'une version
 
-Après chaque fusion dans `main`, GitHub construit les cinq images `php`, `nginx`,
-`postgres`, `liquibase` et `backup`. Elles sont publiées dans GHCR sous le tag
-immuable `sha-<commit>`, accompagnées d’un SBOM, d’une provenance et d’une signature
-Sigstore sans clé.
+Les fusions ordinaires dans `main` ne publient aucune image. Après la fusion de
+la pull request de version, GitHub construit les cinq images `php`, `nginx`,
+`postgres`, `liquibase` et `backup` pour le commit du tag. Elles sont publiées
+dans GHCR sous le tag immuable `sha-<commit>`, accompagnées d’un SBOM, d’une
+provenance et d’une signature Sigstore sans clé.
 
-Les images candidates sont testées par digest. Après validation, le dépôt privé
+Les images candidates sont testées par digest puis reçoivent le tag de version
+sans reconstruction. Après validation, le dépôt privé
 `NeitsabLc/homelab-deploy` reçoit l’événement `scout-market-candidate-ready` et
 déploie exactement ces digests sur `web02`. Les sauvegardes planifiées restent
 désactivées en recette.
@@ -35,14 +37,15 @@ désactivées en recette.
 
 Release Please maintient une pull request de version sur `main`. Sa fusion met à
 jour `CHANGELOG.md`, `version.txt` et `app.version`, puis crée automatiquement la
-GitHub Release et son tag `vX.Y.Z`. La publication de cette release applique la
-version aux digests candidats déjà testés, sans reconstruire les images.
+GitHub Release et son tag `vX.Y.Z`. La publication de cette release construit et
+teste ses candidats, puis applique la version aux mêmes digests sans reconstruire
+les images.
 
-Si cet événement n'a pas déclenché la promotion, lancer manuellement le workflow
-`Publication des images` depuis `main` et renseigner `release_version` sans le
-préfixe `v`. Le workflow vérifie la release publiée, son tag, `version.txt` et le
-SHA candidat avant de reprendre uniquement la promotion. Laisser ce champ vide
-reconstruit et teste les candidats du commit courant.
+Si la promotion ou la recette échoue après la construction des candidats, lancer
+manuellement le workflow `Publication des images de version` depuis `main` et
+renseigner `release_version` sans le préfixe `v`. Le workflow vérifie la release
+publiée, son tag, `version.txt` et son SHA, puis reteste les candidats immuables
+existants, les repromeut si nécessaire et redéclenche la recette.
 
 ## Promotion en production
 
