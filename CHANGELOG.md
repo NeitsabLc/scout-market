@@ -1,5 +1,18 @@
 # Journal des modifications
 
+## [0.1.7](https://github.com/NeitsabLc/scout-market/compare/v0.1.6...v0.1.7) (2026-09-07)
+
+
+### Corrections
+
+* actualiser le monogramme de la favicon ([#17](https://github.com/NeitsabLc/scout-market/issues/17)) ([d61b05b](https://github.com/NeitsabLc/scout-market/commit/d61b05b89170ae1618f261a56b197ed693589fa0))
+
+
+### Documentation
+
+* actualiser la CI et la livraison ([f4b35fe](https://github.com/NeitsabLc/scout-market/commit/f4b35fecda05ac0db62e5151120ba28bbcd1cd37))
+* actualiser la CI et la livraison ([b268fee](https://github.com/NeitsabLc/scout-market/commit/b268feec62facba9d08d7fd1e432049db98ae5f8))
+
 ## [0.1.6](https://github.com/NeitsabLc/scout-market/compare/v0.1.5...v0.1.6) (2026-09-06)
 
 
