@@ -10,6 +10,25 @@
 * **release:** automatiser la livraison vers le homelab ([e8f18f5](https://github.com/NeitsabLc/scout-market/commit/e8f18f5322a2920c912f7041651d5f04b6f5db78))
 * **release:** automatiser la livraison vers le homelab ([3e5e562](https://github.com/NeitsabLc/scout-market/commit/3e5e56225f02414b0141c30281ecdf91607dd70d))
 
+### Fonctionnement
+
+- ajout d’une maintenance quotidienne qui purge les jetons de réinitialisation
+  expirés, avec commande ponctuelle et test de non-régression ;
+- isolation des données de démonstration hors production et chargement explicite
+  de ces données dans la CI.
+
+### Intégration continue et sécurité
+
+- exécution des contrôles de qualité et du smoke de production sur les pull
+  requests visant `main`, avec les statuts distincts `Qualite et tests` et
+  `Configuration de production` ;
+- audit Composer, ImportMap et npm, recherche de secrets et analyse Trivy des
+  cinq images finales ;
+- vérification de l’absence de publication du port PostgreSQL et utilisation du
+  fichier HBA versionné dans le smoke de production ;
+- ciblage de `main` par Dependabot et actualisation des dépendances Composer,
+  npm et GitHub Actions.
+
 ## 0.1.5 — Administration des comptes
 
 - gestion des comptes utilisateurs réservée aux administrateurs ;

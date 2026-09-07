@@ -84,14 +84,19 @@ Avant chaque livraison : validation Liquibase, mapping Doctrine, style PHP, anal
 PHPStan, PHPUnit sur une base recréée, tests Playwright E2E et accessibilité, validation
 Compose de production et smoke test de production avec restauration de sauvegarde.
 
-La CI de qualité s’exécute uniquement sur les pull requests visant `dev` et
-publie le statut stable `Qualite et tests`. Une pull request visant `main`
-exécute uniquement `production-smoke.yaml` et publie `Configuration de
-production`, afin d’éviter les doublons et de toujours créer le statut requis.
-Les deux branches doivent exiger leur statut avec une base strictement à jour.
+Chaque pull request visant l’unique branche stable `main` exécute la CI de
+qualité, qui publie le statut `Qualite et tests`, et le workflow indépendant
+`production-smoke.yaml`, qui publie `Configuration de production`. Le ruleset
+de `main` doit exiger ces deux statuts avec une base strictement à jour.
+Dependabot cible également `main`.
 
 Les commits ordinaires de `main` ne publient aucune image. La publication d'une
 release `vX.Y.Z` construit et signe avec Sigstore cinq images candidates GHCR
 immuables, accompagnées de leur SBOM et provenance, puis teste ces digests. Le
 même workflow les promeut sans reconstruction et déclenche leur déploiement en
 recette. La production reste une promotion manuelle via `homelab-deploy`.
+
+Les services PHP et maintenance reçoivent `MAILER_DSN`,
+`MAILER_FROM_EMAIL` et `MAILER_FROM_NAME`. Le transport reste secret et propre
+à l’environnement ; l’adresse d’expédition par défaut est
+`no-reply@neitsab.net` avec le libellé `Scout Market`.
