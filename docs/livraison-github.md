@@ -47,6 +47,14 @@ renseigner `release_version` sans le préfixe `v`. Le workflow vérifie la relea
 publiée, son tag, `version.txt` et son SHA, puis reteste les candidats immuables
 existants, les repromeut si nécessaire et redéclenche la recette.
 
+## Configuration de la messagerie
+
+La recette et la production doivent fournir leur propre `MAILER_DSN` secret.
+Les services PHP et maintenance utilisent
+`MAILER_FROM_EMAIL=no-reply@neitsab.net` et `MAILER_FROM_NAME=Scout Market` par
+défaut. Ces paramètres sont gérés avec les secrets d’environnement dans
+`homelab-deploy` et ne doivent pas être versionnés dans le dépôt applicatif.
+
 ## Promotion en production
 
 La production se déclenche manuellement depuis le workflow `Promouvoir Scout Market
