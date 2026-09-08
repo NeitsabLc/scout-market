@@ -1,5 +1,21 @@
 # Journal des modifications
 
+## Non publié
+
+### Exploitation
+
+- exécution de la maintenance métier en tâche ponctuelle, prête à être planifiée
+  par un timer persistant avec verrouillage et reprise sur échec.
+- application automatique des durées de conservation : comptes désactivés
+  supprimés après un mois et unités/effectifs purgés après le 31 août, sans
+  supprimer les mouvements de stock ni les audits.
+
+### Documentation
+
+- politique de confidentialité complétée pour l’intendance de Jambville avec
+  finalités, destinataires, hébergement, durées de conservation et point de
+  contact `contact@neitsab.net`.
+
 ## [0.1.8](https://github.com/NeitsabLc/scout-market/compare/v0.1.7...v0.1.8) (2026-09-08)
 
 
