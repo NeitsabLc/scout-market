@@ -142,7 +142,7 @@ services:
     profiles:
       - backup
     logging: *production-logging
-    restart: unless-stopped
+    restart: "no"
     image: "scout-market-backup:${APP_IMAGE_TAG:-local}"
     build:
       context: .
