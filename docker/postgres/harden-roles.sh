@@ -13,6 +13,7 @@ for variable in \
     POSTGRES_APP_USER POSTGRES_APP_PASSWORD \
     POSTGRES_MIGRATOR_USER POSTGRES_MIGRATOR_PASSWORD \
     POSTGRES_BACKUP_USER POSTGRES_BACKUP_PASSWORD \
+    POSTGRES_ADMIN_USER POSTGRES_ADMIN_PASSWORD \
     POSTGRES_HEALTHCHECK_USER POSTGRES_HEALTHCHECK_PASSWORD
 do
     case "$variable" in
@@ -22,6 +23,8 @@ do
         POSTGRES_MIGRATOR_PASSWORD) valeur=${POSTGRES_MIGRATOR_PASSWORD:-} ;;
         POSTGRES_BACKUP_USER) valeur=${POSTGRES_BACKUP_USER:-} ;;
         POSTGRES_BACKUP_PASSWORD) valeur=${POSTGRES_BACKUP_PASSWORD:-} ;;
+        POSTGRES_ADMIN_USER) valeur=${POSTGRES_ADMIN_USER:-} ;;
+        POSTGRES_ADMIN_PASSWORD) valeur=${POSTGRES_ADMIN_PASSWORD:-} ;;
         POSTGRES_HEALTHCHECK_USER) valeur=${POSTGRES_HEALTHCHECK_USER:-} ;;
         POSTGRES_HEALTHCHECK_PASSWORD) valeur=${POSTGRES_HEALTHCHECK_PASSWORD:-} ;;
     esac
@@ -37,9 +40,14 @@ if [ "$POSTGRES_APP_USER" = "$POSTGRES_MIGRATOR_USER" ] \
     || [ "$POSTGRES_MIGRATOR_USER" = "$POSTGRES_BACKUP_USER" ] \
     || [ "$POSTGRES_MIGRATOR_USER" = "$POSTGRES_HEALTHCHECK_USER" ] \
     || [ "$POSTGRES_BACKUP_USER" = "$POSTGRES_HEALTHCHECK_USER" ] \
+    || [ "$POSTGRES_ADMIN_USER" = "$POSTGRES_HEALTHCHECK_USER" ] \
+    || [ "$POSTGRES_ADMIN_USER" = "$POSTGRES_APP_USER" ] \
+    || [ "$POSTGRES_ADMIN_USER" = "$POSTGRES_MIGRATOR_USER" ] \
+    || [ "$POSTGRES_ADMIN_USER" = "$POSTGRES_BACKUP_USER" ] \
     || [ "$POSTGRES_USER" = "$POSTGRES_APP_USER" ] \
     || [ "$POSTGRES_USER" = "$POSTGRES_MIGRATOR_USER" ] \
     || [ "$POSTGRES_USER" = "$POSTGRES_BACKUP_USER" ] \
+    || [ "$POSTGRES_USER" = "$POSTGRES_ADMIN_USER" ] \
     || [ "$POSTGRES_USER" = "$POSTGRES_HEALTHCHECK_USER" ]; then
     echo "Les rôles PostgreSQL d’amorçage et de production doivent être distincts." >&2
     exit 2
@@ -53,8 +61,10 @@ PGPASSWORD="$POSTGRES_PASSWORD" psql --host=127.0.0.1 --username="$POSTGRES_USER
     --set=migrator_password="$POSTGRES_MIGRATOR_PASSWORD" \
     --set=backup_user="$POSTGRES_BACKUP_USER" \
     --set=backup_password="$POSTGRES_BACKUP_PASSWORD" \
-    --set=admin_user="$POSTGRES_HEALTHCHECK_USER" \
-    --set=admin_password="$POSTGRES_HEALTHCHECK_PASSWORD" <<'SQL'
+    --set=admin_user="$POSTGRES_ADMIN_USER" \
+    --set=admin_password="$POSTGRES_ADMIN_PASSWORD" \
+    --set=health_user="$POSTGRES_HEALTHCHECK_USER" \
+    --set=health_password="$POSTGRES_HEALTHCHECK_PASSWORD" <<'SQL'
 SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L', :'app_user', :'app_password')
 WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'app_user') \gexec
 SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L', :'migrator_user', :'migrator_password')
@@ -63,13 +73,17 @@ SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLIC
 WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'backup_user') \gexec
 SELECT format('CREATE ROLE %I WITH LOGIN SUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION BYPASSRLS PASSWORD %L', :'admin_user', :'admin_password')
 WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'admin_user') \gexec
+SELECT format('CREATE ROLE %I WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 3 PASSWORD %L', :'health_user', :'health_password')
+WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'health_user') \gexec
 
 SELECT format('ALTER ROLE %I PASSWORD %L', :'app_user', :'app_password') \gexec
 SELECT format('ALTER ROLE %I PASSWORD %L', :'migrator_user', :'migrator_password') \gexec
 SELECT format('ALTER ROLE %I PASSWORD %L', :'backup_user', :'backup_password') \gexec
 SELECT format('ALTER ROLE %I SUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION BYPASSRLS PASSWORD %L', :'admin_user', :'admin_password') \gexec
+SELECT format('ALTER ROLE %I NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS NOINHERIT CONNECTION LIMIT 3 PASSWORD %L', :'health_user', :'health_password') \gexec
 
 SELECT format('GRANT CONNECT ON DATABASE %I TO %I, %I, %I', :'database_name', :'app_user', :'migrator_user', :'backup_user') \gexec
+SELECT format('GRANT CONNECT ON DATABASE %I TO %I', :'database_name', :'health_user') \gexec
 SELECT format('GRANT USAGE ON SCHEMA scout_market TO %I', :'app_user') \gexec
 SELECT format('GRANT USAGE ON SCHEMA scout_market, public TO %I', :'backup_user') \gexec
 SELECT format('GRANT USAGE, CREATE ON SCHEMA scout_market, public TO %I', :'migrator_user') \gexec

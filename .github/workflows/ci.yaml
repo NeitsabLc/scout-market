@@ -95,7 +95,8 @@ jobs:
       - name: Valider la configuration Docker Compose
         run: |
           docker compose config --quiet
-          POSTGRES_HEALTHCHECK_USER=scout_market_admin \
+          POSTGRES_ADMIN_USER=scout_market_admin \
+          POSTGRES_HEALTHCHECK_USER=scout_market_health \
             docker compose -f compose.yaml -f compose.prod.yaml config --quiet
           digest="sha256:$(printf '0%.0s' {1..64})"
           export SCOUT_RELEASE_PHP_IMAGE="ghcr.io/neitsablc/scout-market-php@${digest}"
