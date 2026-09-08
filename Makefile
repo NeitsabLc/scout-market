@@ -220,8 +220,8 @@ clean: ## Nettoyer les fichiers temporaires Symfony
 	rm -rf app/var/log/*
 
 .PHONY: backup-now
-backup-now: ## Créer immédiatement une sauvegarde via le service de production
-	$(DOCKER_COMPOSE_PROD) --profile backup run --rm -e BACKUP_ONCE=1 backup
+backup-now: ## Créer immédiatement une sauvegarde ponctuelle
+	$(DOCKER_COMPOSE_PROD) --profile backup run --rm backup
 
 .PHONY: backup-restore-test
 backup-restore-test: ## Chiffrer puis restaurer la base dans un environnement jetable
@@ -241,11 +241,11 @@ release-verify: ## Vérifier les digests et signatures Sigstore
 
 .PHONY: release-pull
 release-pull: release-config release-verify ## Télécharger les cinq images vérifiées
-	$(DOCKER_COMPOSE_RELEASE) --profile tools pull php nginx database liquibase backup
+	$(DOCKER_COMPOSE_RELEASE) --profile tools --profile backup pull php nginx database liquibase backup
 
 .PHONY: release-backup-now
-release-backup-now: release-config ## Sauvegarder la base avant une livraison
-	$(DOCKER_COMPOSE_RELEASE) run --rm --no-deps -e BACKUP_ONCE=1 backup
+release-backup-now: release-config ## Sauvegarder ponctuellement la base avant une livraison
+	$(DOCKER_COMPOSE_RELEASE) --profile backup run --rm --no-deps backup
 
 .PHONY: release-db-status
 release-db-status: release-config ## Contrôler les migrations avec l'image livrée
@@ -256,8 +256,8 @@ release-db-update: release-config ## Appliquer les migrations avec l'image livr�
 	$(DOCKER_COMPOSE_RELEASE) --profile tools run --rm liquibase update
 
 .PHONY: release-up
-release-up: release-pull ## Démarrer exactement les images vérifiées
-	$(DOCKER_COMPOSE_RELEASE) up -d --no-build --wait --wait-timeout 120 database php nginx backup
+release-up: release-pull ## Démarrer exactement les services persistants vérifiés
+	$(DOCKER_COMPOSE_RELEASE) up -d --no-build --wait --wait-timeout 120 database php nginx
 
 .PHONY: release-ps
 release-ps: ## Afficher l'état des conteneurs issus des images GHCR
