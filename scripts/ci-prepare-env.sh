@@ -28,11 +28,13 @@ for variable in \
     POSTGRES_APP_PASSWORD \
     POSTGRES_MIGRATOR_PASSWORD \
     POSTGRES_BACKUP_PASSWORD \
+    POSTGRES_ADMIN_PASSWORD \
     POSTGRES_HEALTHCHECK_PASSWORD; do
     valeur=$(openssl rand -hex 24)
     echo "::add-mask::${valeur}"
     echo "${variable}=${valeur}" >> "$GITHUB_ENV"
 done
 
-echo "POSTGRES_HEALTHCHECK_USER=scout_market_admin" >> "$GITHUB_ENV"
+echo "POSTGRES_ADMIN_USER=scout_market_admin" >> "$GITHUB_ENV"
+echo "POSTGRES_HEALTHCHECK_USER=scout_market_health" >> "$GITHUB_ENV"
 echo "POSTGRES_HBA_FILE=./docker/postgres/pg_hba.prod.conf.example" >> "$GITHUB_ENV"

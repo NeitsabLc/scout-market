@@ -12,7 +12,9 @@ export POSTGRES_PASSWORD="$(secret 24)"
 export POSTGRES_APP_PASSWORD="$(secret 24)"
 export POSTGRES_MIGRATOR_PASSWORD="$(secret 24)"
 export POSTGRES_BACKUP_PASSWORD="$(secret 24)"
+export POSTGRES_ADMIN_PASSWORD="$(secret 24)"
 export POSTGRES_HEALTHCHECK_PASSWORD="$(secret 24)"
+export POSTGRES_HBA_FILE=./docker/postgres/pg_hba.prod.conf.example
 export NGINX_HOST_PORT="${NGINX_HOST_PORT:-18083}"
 export POSTGRES_HOST_PORT="${POSTGRES_HOST_PORT:-15437}"
 

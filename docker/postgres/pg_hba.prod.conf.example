@@ -15,7 +15,8 @@ host    scout_market       scout_market_app          172.30.0.0/16           scr
 host    scout_market       scout_market_migrator     172.30.0.0/16           scram-sha-256
 host    scout_market       scout_market_backup       172.30.0.0/16           scram-sha-256
 host    scout_market       scout_market              172.30.0.0/16           scram-sha-256
-host    all             scout_market_admin        172.30.0.0/16           scram-sha-256
+host    all                scout_market_admin        172.30.0.0/16           scram-sha-256
+host    all                scout_market_health       172.30.0.0/16           scram-sha-256
 
 host    all             all                     0.0.0.0/0               reject
 host    all             all                     ::/0                    reject
