@@ -158,7 +158,7 @@ jobs:
       - name: Installer les dependances PHP
         run: >-
           docker compose run --rm php composer install
-          --no-interaction --prefer-dist --no-progress
+          --no-interaction --prefer-dist --no-progress --no-scripts
 
       - name: Demarrer l'application
         run: |
@@ -186,7 +186,11 @@ jobs:
       - name: Compiler les assets
         run: |
           docker compose exec --no-TTY php php bin/console cache:clear --env=prod --no-debug
-          docker compose exec --no-TTY php php bin/console importmap:install
+          for tentative in 1 2 3; do
+            docker compose exec --no-TTY php php bin/console importmap:install && break
+            test "$tentative" -lt 3 || exit 1
+            sleep "$((tentative * 5))"
+          done
           docker compose exec --no-TTY php php bin/console asset-map:compile --env=prod --no-debug
 
       - name: Analyser statiquement le code PHP
