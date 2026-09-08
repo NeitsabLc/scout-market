@@ -1,0 +1,15 @@
+{% extends 'base.html.twig' %}
+{% block title %}Distribution Scout Market | Scout Market{% endblock %}
+{% block body %}
+<main class="orders-page entity-list-page distribution-admin-page">
+    {{ include('distribution/_navigation.html.twig', {page: 'scout_market', sous_titre: 'Quantités totales à sortir au comptoir pour chaque repas'}) }}
+    <p class="order-calculation-note">Les quantités regroupent toutes les unités affectées au mode Scout Market. Les choix Explo, pique-nique et repas non pris déclarés sur les fiches des unités restent appliqués.</p>
+    {% if commandes is empty %}<section class="stock-list-card"><div class="stocks-empty"><strong>Aucune distribution au Scout Market</strong><p>Aucun repas à venir n’utilise ce mode de distribution.</p></div></section>
+    {% else %}<div class="orders-list">
+        {% for commande in commandes %}{% set menu = commande.menu %}<details class="order-meal-card">
+            <summary><h2><time datetime="{{ menu.dateMenu|date('Y-m-d') }}">{{ menu.dateMenu|date_jour_mois }}</time> — {{ menu.libelle }}</h2><span class="order-meal-card__meta"><span>{{ commande.lignes|length }} denrée{{ commande.lignes|length > 1 ? 's' : '' }}</span><span class="order-meal-card__chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></span></span></summary>
+            <div class="order-table"><table><thead><tr><th scope="col">Denrée</th><th scope="col">Type</th><th scope="col">Régime</th><th scope="col">Quantité totale à sortir</th><th scope="col">Unité</th></tr></thead><tbody>{% for ligne in commande.lignes %}<tr><th scope="row">{{ ligne.denree.nom }}</th><td><span class="food-type-badge">{{ ligne.denree.type.libelle }}</span></td><td>{% if ligne.regime %}<span class="diet-badge">{{ ligne.regime.libelle }}</span>{% else %}Standard{% endif %}</td><td class="order-total"><strong>{{ ligne.quantite|quantite }}</strong></td><td>{{ ligne.unite.nom }} ({{ ligne.unite.symbole }})</td></tr>{% endfor %}</tbody></table></div>
+        </details>{% endfor %}
+    </div>{% endif %}
+</main>
+{% endblock %}

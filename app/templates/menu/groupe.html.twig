@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+{% block title %}Menus du jour | Scout Market{% endblock %}
+{% block body %}
+<main class="group-menu-page">
+    <header class="group-menu-heading"><h1>Menus{% if grille %} — {{ grille.label }}{% endif %}</h1></header>
+    {% if not grille %}<section class="empty-state"><h2>Aucune grille associée</h2><p>Demandez à un gestionnaire d’associer votre unité à une grille de menus.</p></section>
+    {% else %}{{ include('menu/_consultation.html.twig') }}{% endif %}
+</main>
+{% endblock %}
