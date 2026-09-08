@@ -96,6 +96,12 @@ make release-ps
 
 Le proxy inverse, les certificats, les secrets, les sauvegardes et la supervision relèvent de la configuration du serveur et ne doivent pas être stockés dans le dépôt.
 
+### Premier déploiement simplifié
+
+Le fichier `.env.simple-prod.example` est réservé à l’amorçage temporaire d’un premier serveur. Il réutilise un même rôle PostgreSQL pour plusieurs usages et laisse la sauvegarde chiffrée désactivée. Il ne constitue donc pas la configuration de production cible.
+
+Pour l’utiliser, le copier vers `.env`, renseigner tous les secrets, limiter ses permissions avec `chmod 600 .env`, puis valider la configuration avec `make prod-config`. Avant d’importer des données réelles, migrer vers les rôles PostgreSQL dédiés décrits dans `.env.example` et configurer une sauvegarde chiffrée restaurable.
+
 ## Tests et CI
 
 Les contrôles disponibles localement sont :
