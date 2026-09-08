@@ -42,7 +42,8 @@ openssl rand -hex 24
 
 Dans `.env`, mettre le premier dans `APP_SECRET`, puis recopier exactement le second
 dans `POSTGRES_PASSWORD`, `POSTGRES_APP_PASSWORD`, `POSTGRES_MIGRATOR_PASSWORD`,
-`POSTGRES_HEALTHCHECK_PASSWORD` et `POSTGRES_BACKUP_PASSWORD`.
+`POSTGRES_ADMIN_PASSWORD`, `POSTGRES_HEALTHCHECK_PASSWORD` et
+`POSTGRES_BACKUP_PASSWORD`.
 
 Les autres valeurs sont déjà préparées pour cette infrastructure : domaine public,
 écoute Nginx sur `192.168.2.18:8082`, réseau Docker `172.31.0.0/24`, proxy de

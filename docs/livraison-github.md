@@ -51,7 +51,7 @@ existants, les repromeut si nécessaire et redéclenche la recette.
 
 La recette et la production doivent fournir leur propre `MAILER_DSN` secret.
 Les services PHP et maintenance utilisent
-`MAILER_FROM_EMAIL=no-reply@neitsab.net` et `MAILER_FROM_NAME=Scout Market` par
+`MAILER_FROM_EMAIL=no-reply@neitsab.net` et `MAILER_FROM_NAME="Scout Market"` par
 défaut. Ces paramètres sont gérés avec les secrets d’environnement dans
 `homelab-deploy` et ne doivent pas être versionnés dans le dépôt applicatif.
 

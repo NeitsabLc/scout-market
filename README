@@ -145,7 +145,7 @@ des digests, crée une sauvegarde chiffrée avant Liquibase, puis déploie sur `
 
 Les environnements distants fournissent un `MAILER_DSN` secret. Les services PHP
 et maintenance utilisent `MAILER_FROM_EMAIL=no-reply@neitsab.net` et
-`MAILER_FROM_NAME=Scout Market` par défaut. Le transport SMTP et l’identité
+`MAILER_FROM_NAME="Scout Market"` par défaut. Le transport SMTP et l’identité
 d’expédition doivent être validés en recette avant la promotion en production.
 
 Les commandes `make release-*` restent disponibles pour le diagnostic manuel :

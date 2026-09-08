@@ -2,6 +2,15 @@
 
 ## Non publié
 
+### Sécurité
+
+- séparation du rôle PostgreSQL d’administration et du rôle de contrôle de
+  santé, désormais non superutilisateur, sans héritage et limité à trois
+  connexions ;
+- contrôle de santé PostgreSQL authentifié par une requête réelle, avec
+  repli sur le rôle d’amorçage lors de la toute première initialisation, puis
+  vérification automatisée des privilèges et de la restauration.
+
 ### Exploitation
 
 - exécution de la maintenance métier en tâche ponctuelle, prête à être planifiée
@@ -9,6 +18,8 @@
 - application automatique des durées de conservation : comptes désactivés
   supprimés après un mois et unités/effectifs purgés après le 31 août, sans
   supprimer les mouvements de stock ni les audits.
+- valeur d’exemple `MAILER_FROM_NAME` protégée par des guillemets pour pouvoir
+  charger le fichier d’environnement depuis les scripts de déploiement.
 
 ### Documentation
 

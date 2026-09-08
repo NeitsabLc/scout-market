@@ -34,25 +34,44 @@ lire_variable_env() {
 : "${POSTGRES_APP_USER:=$(lire_variable_env POSTGRES_APP_USER)}"
 : "${POSTGRES_MIGRATOR_USER:=$(lire_variable_env POSTGRES_MIGRATOR_USER)}"
 : "${POSTGRES_BACKUP_USER:=$(lire_variable_env POSTGRES_BACKUP_USER)}"
+: "${POSTGRES_ADMIN_USER:=$(lire_variable_env POSTGRES_ADMIN_USER)}"
 : "${POSTGRES_HEALTHCHECK_USER:=$(lire_variable_env POSTGRES_HEALTHCHECK_USER)}"
 : "${POSTGRES_USER:?POSTGRES_USER doit etre renseigne pour le smoke test}"
 : "${POSTGRES_DB:?POSTGRES_DB doit etre renseigne pour le smoke test}"
 : "${POSTGRES_APP_USER:?POSTGRES_APP_USER doit etre renseigne pour le smoke test}"
 : "${POSTGRES_MIGRATOR_USER:?POSTGRES_MIGRATOR_USER doit etre renseigne pour le smoke test}"
 : "${POSTGRES_BACKUP_USER:?POSTGRES_BACKUP_USER doit etre renseigne pour le smoke test}"
+: "${POSTGRES_ADMIN_USER:?POSTGRES_ADMIN_USER doit etre renseigne pour le smoke test}"
 : "${POSTGRES_HEALTHCHECK_USER:?POSTGRES_HEALTHCHECK_USER doit etre renseigne pour le smoke test}"
 : "${APP_SECRET:?APP_SECRET doit etre renseigne pour le smoke test}"
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD doit etre renseigne pour le smoke test}"
 : "${POSTGRES_APP_PASSWORD:?POSTGRES_APP_PASSWORD doit etre renseigne pour le smoke test}"
 : "${POSTGRES_MIGRATOR_PASSWORD:?POSTGRES_MIGRATOR_PASSWORD doit etre renseigne pour le smoke test}"
 : "${POSTGRES_BACKUP_PASSWORD:?POSTGRES_BACKUP_PASSWORD doit etre renseigne pour le smoke test}"
+: "${POSTGRES_ADMIN_PASSWORD:?POSTGRES_ADMIN_PASSWORD doit etre renseigne pour le smoke test}"
 : "${POSTGRES_HEALTHCHECK_PASSWORD:?POSTGRES_HEALTHCHECK_PASSWORD doit etre renseigne pour le smoke test}"
 export POSTGRES_USER POSTGRES_DB POSTGRES_PASSWORD
 export POSTGRES_APP_USER POSTGRES_APP_PASSWORD
 export POSTGRES_MIGRATOR_USER POSTGRES_MIGRATOR_PASSWORD
 export POSTGRES_BACKUP_USER POSTGRES_BACKUP_PASSWORD
+export POSTGRES_ADMIN_USER POSTGRES_ADMIN_PASSWORD
 export POSTGRES_HEALTHCHECK_USER POSTGRES_HEALTHCHECK_PASSWORD
 export APP_SECRET
+
+for role in \
+    "$POSTGRES_USER" \
+    "$POSTGRES_APP_USER" \
+    "$POSTGRES_MIGRATOR_USER" \
+    "$POSTGRES_BACKUP_USER" \
+    "$POSTGRES_ADMIN_USER" \
+    "$POSTGRES_HEALTHCHECK_USER"; do
+    case "$role" in
+        ''|*[!a-zA-Z0-9_]*)
+            echo "Nom de rôle PostgreSQL invalide pour le smoke test : $role" >&2
+            exit 2
+            ;;
+    esac
+done
 
 for commande in docker jq; do
     if ! command -v "$commande" >/dev/null 2>&1; then
@@ -124,6 +143,34 @@ compose --profile tools run --rm \
     liquibase update
 compose exec --no-TTY database scout-market-harden-roles prepare
 compose --profile tools run --rm liquibase update
+compose exec --no-TTY database sh -ec '
+    admin=$(PGPASSWORD="$POSTGRES_ADMIN_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_ADMIN_USER" --dbname="$POSTGRES_DB" \
+        --tuples-only --no-align --set=ON_ERROR_STOP=1 \
+        --command="SELECT
+            rolsuper,
+            rolcanlogin
+            FROM pg_roles WHERE rolname = current_user")
+    health=$(PGPASSWORD="$POSTGRES_HEALTHCHECK_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_HEALTHCHECK_USER" --dbname="$POSTGRES_DB" \
+        --tuples-only --no-align --set=ON_ERROR_STOP=1 \
+        --command="SELECT
+            1,
+            NOT rolsuper,
+            NOT rolinherit,
+            rolconnlimit = 3
+            FROM pg_roles WHERE rolname = current_user")
+    test "$admin" = "t|t"
+    test "$health" = "1|t|t|t"
+    if PGPASSWORD="$POSTGRES_HEALTHCHECK_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_HEALTHCHECK_USER" --dbname="$POSTGRES_DB" \
+        --set=ON_ERROR_STOP=1 \
+        --command="SELECT 1 FROM scout_market.utilisateur LIMIT 1" \
+        >/dev/null 2>&1; then
+        echo "Le rôle de contrôle de santé peut lire une table applicative." >&2
+        exit 1
+    fi
+'
 compose exec --no-TTY database sh -ec '
     resultat=$(PGPASSWORD="$POSTGRES_PASSWORD" psql --host=127.0.0.1 \
         --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" \
@@ -209,6 +256,7 @@ compose exec --no-TTY database sh -ec '
     grep -Ev "^[[:space:]]*(#|$)" "$hba_file" | grep -Eq "host[[:space:]]+${POSTGRES_DB}[[:space:]]+${POSTGRES_APP_USER}[[:space:]]+172[.]30[.]0[.]0/16[[:space:]]+scram-sha-256"
     grep -Ev "^[[:space:]]*(#|$)" "$hba_file" | grep -Eq "host[[:space:]]+${POSTGRES_DB}[[:space:]]+${POSTGRES_MIGRATOR_USER}[[:space:]]+172[.]30[.]0[.]0/16[[:space:]]+scram-sha-256"
     grep -Ev "^[[:space:]]*(#|$)" "$hba_file" | grep -Eq "host[[:space:]]+${POSTGRES_DB}[[:space:]]+${POSTGRES_BACKUP_USER}[[:space:]]+172[.]30[.]0[.]0/16[[:space:]]+scram-sha-256"
+    grep -Ev "^[[:space:]]*(#|$)" "$hba_file" | grep -Eq "host[[:space:]]+all[[:space:]]+${POSTGRES_ADMIN_USER}[[:space:]]+172[.]30[.]0[.]0/16[[:space:]]+scram-sha-256"
     grep -Ev "^[[:space:]]*(#|$)" "$hba_file" | grep -Eq "host[[:space:]]+all[[:space:]]+${POSTGRES_HEALTHCHECK_USER}[[:space:]]+172[.]30[.]0[.]0/16[[:space:]]+scram-sha-256"
     grep -Ev "^[[:space:]]*(#|$)" "$hba_file" | grep -Eq "host[[:space:]]+all[[:space:]]+all[[:space:]]+0[.]0[.]0[.]0/0[[:space:]]+reject"
 
@@ -255,9 +303,9 @@ fi
 
 compose run --rm --no-deps \
     --env BACKUP_AGE_IDENTITY_FILE=/run/identity.txt \
-    --env POSTGRES_USER="$POSTGRES_HEALTHCHECK_USER" \
+    --env POSTGRES_USER="$POSTGRES_ADMIN_USER" \
     --env POSTGRES_DB="$POSTGRES_DB" \
-    --env PGPASSWORD="$POSTGRES_HEALTHCHECK_PASSWORD" \
+    --env PGPASSWORD="$POSTGRES_ADMIN_PASSWORD" \
     --env RESTORE_DATABASE_NAME="${POSTGRES_DB}_production_restore_check" \
     --volume "$fichier_identite:/run/identity.txt:ro" \
     --entrypoint /usr/local/bin/scout-market-verify-backup \
@@ -288,8 +336,7 @@ compose exec --no-TTY database sh -ec '
 compose exec --no-TTY database scout-market-harden-roles finalize
 
 compose exec --no-TTY database sh -ec '
-    case "$POSTGRES_USER" in *[!a-zA-Z0-9_]*) exit 2 ;; esac
-    resultat=$(PGPASSWORD="$POSTGRES_HEALTHCHECK_PASSWORD" psql --host=127.0.0.1 --username="$POSTGRES_HEALTHCHECK_USER" --dbname="$POSTGRES_DB" \
+    resultat=$(PGPASSWORD="$POSTGRES_ADMIN_PASSWORD" psql --host=127.0.0.1 --username="$POSTGRES_ADMIN_USER" --dbname="$POSTGRES_DB" \
         --tuples-only --no-align --set=ON_ERROR_STOP=1 \
         --command="SELECT NOT rolcanlogin FROM pg_roles WHERE rolname = '"'"'$POSTGRES_USER'"'"'")
     test "$resultat" = "t"
