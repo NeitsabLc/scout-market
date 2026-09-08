@@ -27,6 +27,13 @@
   finalités, destinataires, hébergement, durées de conservation et point de
   contact `contact@neitsab.net`.
 
+## [0.2.1](https://github.com/NeitsabLc/scout-market/compare/v0.2.0...v0.2.1) (2026-09-08)
+
+
+### Corrections
+
+* **security:** separer le healthcheck PostgreSQL ([#23](https://github.com/NeitsabLc/scout-market/issues/23)) ([989b969](https://github.com/NeitsabLc/scout-market/commit/989b9692a70d7d30bef2856b025f6d9841e21911))
+
 ## [0.2.0](https://github.com/NeitsabLc/scout-market/compare/v0.1.8...v0.2.0) (2026-09-08)
 
 
