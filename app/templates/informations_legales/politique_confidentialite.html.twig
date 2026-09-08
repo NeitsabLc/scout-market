@@ -1,3 +1,55 @@
 {% extends 'base.html.twig' %}
 {% block title %}Politique de confidentialité | Scout Market{% endblock %}
-{% block body %}<main class="legal-page"><article><h1>Politique de confidentialité</h1><p>Scout Market traite les informations nécessaires à l’authentification et à l’intendance.</p><h2>Données traitées</h2><p>Les données comprennent les comptes utilisateurs, les unités participantes et leurs effectifs alimentaires, les fournisseurs, denrées, recettes, menus, commandes, distributions et mouvements de stock.</p><h2>Accès</h2><p>L’accès dépend du rôle attribué : administrateur, gestionnaire ou unité participante. Les unités disposent d’un accès limité aux menus qui leur sont associés.</p><h2>Conservation</h2><p>Les comptes désactivés peuvent être supprimés lorsqu’ils ne sont plus utiles. Les données d’inventaire et d’audit sont conservées afin de préserver la traçabilité opérationnelle.</p><h2>Vos droits</h2><p>Pour toute demande relative à vos données, contactez <a href="mailto:scout-market@neitsab.net">scout-market@neitsab.net</a>.</p></article></main>{% endblock %}
+{% block body %}
+<main class="legal-page">
+    <article>
+        <h1>Politique de confidentialité</h1>
+        <p>Dernière mise à jour : 8 septembre 2026.</p>
+        <p>Cette page décrit les données utilisées par Scout Market pour l’intendance du site de Jambville et les moyens d’exercer vos droits. Le point de contact pour les données personnelles est <a href="mailto:contact@neitsab.net">contact@neitsab.net</a>.</p>
+
+        <h2>1. Personnes concernées</h2>
+        <p>Les traitements concernent les membres de l’équipe d’intendance et les responsables des unités participantes disposant d’un compte, ainsi que les contacts professionnels renseignés pour les fournisseurs.</p>
+
+        <h2>2. Données utilisées</h2>
+        <ul>
+            <li><strong>Comptes :</strong> nom, prénom, adresse e-mail, rôle, unité éventuelle et informations techniques nécessaires à l’authentification.</li>
+            <li><strong>Unités :</strong> nom, type, dates de présence, effectifs jeunes et adultes et nombres de repas adaptés par régime alimentaire. Aucun nom de participant n’est demandé.</li>
+            <li><strong>Fournisseurs :</strong> nom, téléphone, adresse e-mail et adresse professionnelle.</li>
+            <li><strong>Intendance :</strong> denrées, recettes, menus, commandes, distributions, quantités et mouvements de stock.</li>
+            <li><strong>Traçabilité :</strong> auteur, date, motif et état avant et après une modification ou une annulation de mouvement.</li>
+        </ul>
+
+        <h2>3. Finalités et fondement</h2>
+        <p>Les données servent exclusivement à administrer les accès, dimensionner les besoins alimentaires, préparer les commandes et distributions, gérer l’inventaire et assurer la traçabilité des opérations d’intendance de Jambville. Elles sont traitées pour permettre l’organisation de cette activité et répondre à l’intérêt légitime de sécuriser et justifier les opérations de stock.</p>
+
+        <h2>4. Destinataires et prestataires</h2>
+        <p>L’accès dépend du rôle attribué : administrateurs, gestionnaires de l’intendance et responsables d’unité ne reçoivent que les informations nécessaires à leur mission.</p>
+        <p>L’application et sa base sont hébergées sur l’infrastructure personnelle de l’exploitant. Le service MX Plan d’OVHcloud assure l’envoi des e-mails. GitHub héberge le code source, les automatisations de livraison et les images logicielles, mais ne reçoit pas les données personnelles de production. Aucun transfert de données applicatives hors de l’Espace économique européen n’est organisé.</p>
+
+        <h2>5. Durées de conservation</h2>
+        <ul>
+            <li><strong>Comptes désactivés :</strong> suppression automatique un mois après leur désactivation, sauf réactivation. Les mouvements existants sont conservés et rattachés au compte technique ; le libellé déjà inscrit dans un audit reste conservé avec cet audit.</li>
+            <li><strong>Unités et effectifs :</strong> suppression automatique lors du premier cycle de maintenance suivant le 31 août qui clôt l’année scolaire concernée. Les comptes rattachés sont alors désactivés.</li>
+            <li><strong>Coordonnées des fournisseurs :</strong> aucune suppression automatique ; elles sont conservées tant qu’elles restent nécessaires à l’intendance et doivent être supprimées manuellement lorsqu’elles ne sont plus utiles.</li>
+            <li><strong>Mouvements de stock et audits :</strong> conservation sans échéance automatique afin d’assurer la continuité de l’inventaire et la traçabilité des modifications et annulations.</li>
+            <li><strong>Jetons de réinitialisation :</strong> suppression à leur utilisation, leur remplacement ou leur expiration.</li>
+            <li><strong>Sauvegardes :</strong> archives chiffrées soumises à une rotation automatique après sept jours.</li>
+            <li><strong>Journaux Symfony :</strong> les deux fichiers les plus récents sont conservés dans le stockage temporaire du conteneur et disparaissent à son remplacement.</li>
+            <li><strong>Journaux Docker :</strong> cinq fichiers de 10 Mo au maximum par service.</li>
+        </ul>
+
+        <h2>6. Sécurité</h2>
+        <p>Scout Market utilise des comptes nominatifs, des droits par rôle, des mots de passe protégés, une limitation des tentatives de connexion et des protections contre les requêtes frauduleuses. Les sauvegardes sont chiffrées et les services applicatifs sont isolés par conteneurs.</p>
+
+        <h2>7. Cookies</h2>
+        <p>Seuls les cookies techniques indispensables à la connexion, à la session et à la sécurité des formulaires sont utilisés. Ils ne servent ni à la publicité ni au suivi sur d’autres sites ; aucun bandeau de consentement n’est donc affiché.</p>
+
+        <h2>8. Vos droits</h2>
+        <p>Selon la situation, vous pouvez demander l’accès, la rectification, l’effacement ou la limitation de vos données et vous opposer à certains traitements. Adressez votre demande à <a href="mailto:contact@neitsab.net">contact@neitsab.net</a>. Une vérification d’identité pourra être demandée si nécessaire. Vous pouvez également adresser une réclamation à la <a href="https://www.cnil.fr/" rel="external">CNIL</a>.</p>
+
+        <h2>9. Évolution</h2>
+        <p>Cette politique peut être mise à jour pour refléter une évolution du service ou de son organisation. La version publiée sur cette page est la version en vigueur.</p>
+        <p>Voir également les <a href="{{ path('app_conditions_utilisation') }}">conditions d’utilisation</a>.</p>
+    </article>
+</main>
+{% endblock %}

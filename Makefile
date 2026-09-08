@@ -51,7 +51,7 @@ prod-build: prod-config ## Construire localement les images de production
 
 .PHONY: prod-up
 prod-up: prod-config ## Démarrer l'application de production sans reconstruire les images
-	$(DOCKER_COMPOSE_PROD) up -d --no-build database php nginx maintenance
+	$(DOCKER_COMPOSE_PROD) up -d --no-build database php nginx
 
 .PHONY: prod-ps
 prod-ps: ## Afficher l'état des conteneurs de production
@@ -257,7 +257,7 @@ release-db-update: release-config ## Appliquer les migrations avec l'image livr�
 
 .PHONY: release-up
 release-up: release-pull ## Démarrer exactement les images vérifiées
-	$(DOCKER_COMPOSE_RELEASE) up -d --no-build --wait --wait-timeout 120 database php nginx backup maintenance
+	$(DOCKER_COMPOSE_RELEASE) up -d --no-build --wait --wait-timeout 120 database php nginx backup
 
 .PHONY: release-ps
 release-ps: ## Afficher l'état des conteneurs issus des images GHCR
@@ -265,11 +265,11 @@ release-ps: ## Afficher l'état des conteneurs issus des images GHCR
 
 .PHONY: release-maintenance-now
 release-maintenance-now: release-config ## Exécuter un cycle de maintenance avec l'image livrée
-	$(DOCKER_COMPOSE_RELEASE) run --rm -e MAINTENANCE_ONCE=1 maintenance
+	$(DOCKER_COMPOSE_RELEASE) --profile maintenance run --rm maintenance
 
 .PHONY: maintenance-now
 maintenance-now: ## Exécuter immédiatement un cycle de maintenance de production
-	$(DOCKER_COMPOSE_PROD) run --rm -e MAINTENANCE_ONCE=1 maintenance
+	$(DOCKER_COMPOSE_PROD) --profile maintenance run --rm maintenance
 
 .PHONY: prod-db-roles-prepare
 prod-db-roles-prepare: ## Préparer les rôles PostgreSQL limités sans retirer les accès existants
