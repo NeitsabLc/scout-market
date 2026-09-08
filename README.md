@@ -9,7 +9,7 @@
 
 ## Description
 
-Scout Market est l’application permanente d’intendance des Scouts et Guides de France. Elle reprend les fonctions d’intendance de Campement sans notion de séjour ni modules administratifs historiques, afin de gérer au quotidien les menus, les stocks, les distributions et les commandes.
+Scout Market est l’application de gestion quotidienne du Scout Market de Jambville. Elle permet de gérer les menus, les stocks, les distributions et les commandes.
 
 L’application repose sur Symfony, PostgreSQL, Liquibase, Nginx et Docker Compose.
 
