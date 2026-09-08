@@ -1,5 +1,12 @@
 # Journal des modifications
 
+## [0.1.8](https://github.com/NeitsabLc/scout-market/compare/v0.1.7...v0.1.8) (2026-09-08)
+
+
+### Corrections
+
+* **deps-dev:** bump the tests-navigateur group with 2 updates ([#18](https://github.com/NeitsabLc/scout-market/issues/18)) ([214eed3](https://github.com/NeitsabLc/scout-market/commit/214eed3d5d07b8ce9e713bd401952d4b62d16878))
+
 ## [0.1.7](https://github.com/NeitsabLc/scout-market/compare/v0.1.6...v0.1.7) (2026-09-07)
 
 
