@@ -16,6 +16,13 @@
   finalités, destinataires, hébergement, durées de conservation et point de
   contact `contact@neitsab.net`.
 
+## [0.2.0](https://github.com/NeitsabLc/scout-market/compare/v0.1.8...v0.2.0) (2026-09-08)
+
+
+### Fonctionnalités
+
+* **rgpd:** appliquer les durées de conservation ([#21](https://github.com/NeitsabLc/scout-market/issues/21)) ([82ea182](https://github.com/NeitsabLc/scout-market/commit/82ea182bd67ed5cba9e32391dd53da6e1b7f1d7a))
+
 ## [0.1.8](https://github.com/NeitsabLc/scout-market/compare/v0.1.7...v0.1.8) (2026-09-08)
 
 
