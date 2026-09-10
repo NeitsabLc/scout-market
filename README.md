@@ -109,7 +109,7 @@ Les contrôles disponibles localement sont :
 ```bash
 make db-validate
 make doctrine-validate
-make lint-php
+make style
 make analyse-statique
 make test
 make test-accessibility
