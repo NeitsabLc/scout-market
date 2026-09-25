@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\TypeDistributionMenu;
 use App\Repository\GrilleMenuRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -29,6 +30,9 @@ class GrilleMenu
 
     #[ORM\Column(name: 'date_fin', type: Types::DATE_IMMUTABLE)]
     private \DateTimeImmutable $dateFin;
+
+    #[ORM\Column(name: 'type_distribution', length: 30, enumType: TypeDistributionMenu::class, options: ['default' => 'SCOUT_MARKET'])]
+    private TypeDistributionMenu $typeDistribution = TypeDistributionMenu::SCOUT_MARKET;
 
     #[ORM\Column(options: ['default' => true])]
     private bool $actif = true;
@@ -82,6 +86,18 @@ class GrilleMenu
         }
         $this->dateDebut = $dateDebut;
         $this->dateFin = $dateFin;
+
+        return $this;
+    }
+
+    public function getTypeDistribution(): TypeDistributionMenu
+    {
+        return $this->typeDistribution;
+    }
+
+    public function setTypeDistribution(TypeDistributionMenu $typeDistribution): self
+    {
+        $this->typeDistribution = $typeDistribution;
 
         return $this;
     }

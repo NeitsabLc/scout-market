@@ -66,8 +66,7 @@ final class PreparationDistribution
             $nouveau = (new Menu())
                 ->setGrilleMenu($menu->getGrilleMenu() ?? throw new \LogicException('Le goûter doit appartenir à une grille.'))
                 ->setDateMenu($date)
-                ->setTypeRepas($dejeuner)
-                ->setTypeDistribution($menu->getTypeDistribution());
+                ->setTypeRepas($dejeuner);
             $this->entityManager->persist($nouveau);
             $datesAvecDejeuner[$this->cleGrilleDate($menu)] = true;
             ++$crees;

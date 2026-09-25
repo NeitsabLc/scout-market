@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Enum\TypeDistributionMenu;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -39,9 +38,6 @@ class Menu
 
     #[ORM\Column(length: 150, nullable: true)]
     private ?string $nom = null;
-
-    #[ORM\Column(name: 'type_distribution', length: 30, enumType: TypeDistributionMenu::class, options: ['default' => 'SCOUT_MARKET'])]
-    private TypeDistributionMenu $typeDistribution = TypeDistributionMenu::SCOUT_MARKET;
 
     #[ORM\Column(options: ['default' => true])]
     private bool $actif = true;
@@ -145,18 +141,6 @@ class Menu
     public function setNom(?string $nom): self
     {
         $this->nom = $nom;
-
-        return $this;
-    }
-
-    public function getTypeDistribution(): TypeDistributionMenu
-    {
-        return $this->typeDistribution;
-    }
-
-    public function setTypeDistribution(TypeDistributionMenu $typeDistribution): self
-    {
-        $this->typeDistribution = $typeDistribution;
 
         return $this;
     }

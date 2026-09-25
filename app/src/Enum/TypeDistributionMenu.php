@@ -12,8 +12,8 @@ enum TypeDistributionMenu: string
     public function libelle(): string
     {
         return match ($this) {
-            self::SCOUT_MARKET => 'Scout Market',
-            self::EN_CAISSE => 'En caisse',
+            self::SCOUT_MARKET => 'Camp accompagné',
+            self::EN_CAISSE => 'Stage',
         };
     }
 

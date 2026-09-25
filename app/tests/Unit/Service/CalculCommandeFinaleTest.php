@@ -59,7 +59,7 @@ final class CalculCommandeFinaleTest extends TestCase
         $kilogramme = new Unite('kilogramme', 'kg');
         $riz = (new Denree())->setNom('Riz')->setType(TypeDenree::SEC)->setUniteReference($kilogramme)->setUniteInventaire($kilogramme);
         $tomates = (new Denree())->setNom('Tomates')->setType(TypeDenree::FRAIS)->setUniteReference($kilogramme)->setUniteInventaire($kilogramme);
-        $grilleCaisse = new GrilleMenu('En caisse', $date, $date->modify('+1 day'));
+        $grilleCaisse = (new GrilleMenu('En caisse', $date, $date->modify('+1 day')))->setTypeDistribution(TypeDistributionMenu::EN_CAISSE);
         $grilleScoutMarket = new GrilleMenu('Scout Market', $date, $date->modify('+1 day'));
 
         $commandes = [];
@@ -67,7 +67,7 @@ final class CalculCommandeFinaleTest extends TestCase
             [$date, 2.0, 1.0, 3.0],
             [$date->modify('+1 day'), 4.0, 2.0, 5.0],
         ] as [$dateMenu, $rizCaisse, $tomatesCaisse, $rizScoutMarket]) {
-            $menuCaisse = (new Menu())->setGrilleMenu($grilleCaisse)->setDateMenu($dateMenu)->setTypeDistribution(TypeDistributionMenu::EN_CAISSE);
+            $menuCaisse = (new Menu())->setGrilleMenu($grilleCaisse)->setDateMenu($dateMenu);
             $menuScoutMarket = (new Menu())->setGrilleMenu($grilleScoutMarket)->setDateMenu($dateMenu);
             $ligne = static fn (Denree $denree, float $quantite): array => [
                 'denree' => $denree,
@@ -81,8 +81,8 @@ final class CalculCommandeFinaleTest extends TestCase
                 'menu' => $menuCaisse,
                 'lignes' => [...$lignesCaisse, ...$lignesScoutMarket],
                 'grilles' => [
-                    ['menu' => $menuCaisse, 'lignes' => $lignesCaisse],
-                    ['menu' => $menuScoutMarket, 'lignes' => $lignesScoutMarket],
+                    ['grille' => $grilleCaisse, 'menu' => $menuCaisse, 'lignes' => $lignesCaisse],
+                    ['grille' => $grilleScoutMarket, 'menu' => $menuScoutMarket, 'lignes' => $lignesScoutMarket],
                 ],
             ];
         }

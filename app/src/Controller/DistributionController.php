@@ -64,7 +64,7 @@ final class DistributionController extends AbstractController
         $commandes = $this->prochainesCommandes($menus, $groupes, $groupeRepas, $calcul, $clock);
 
         return $this->render('distribution/en_caisse.html.twig', [
-            'produits_secs' => $vues->produitsSecsEnCaisse($commandes),
+            'produits_secs_par_unite' => $vues->produitsSecsEnCaisse($commandes),
             'commandes' => $vues->enCaisse($commandes),
         ]);
     }

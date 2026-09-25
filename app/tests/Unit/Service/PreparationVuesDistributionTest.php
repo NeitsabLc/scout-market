@@ -55,15 +55,17 @@ final class PreparationVuesDistributionTest extends TestCase
         self::assertSame([8.0, 4.0], array_column($resultat[0]['menus'][0]['unites'][0]['lignes'], 'quantite'));
     }
 
-    public function testLesProduitsSecsSontRegroupesDansLaLivraisonInitiale(): void
+    public function testLesProduitsSecsSontRegroupesParUniteDansLaLivraisonInitiale(): void
     {
         [$commande, $riz, $tomates] = $this->commande();
 
         $resultat = (new PreparationVuesDistribution())->produitsSecsEnCaisse([$commande]);
 
-        self::assertSame([$riz], array_column($resultat, 'denree'));
-        self::assertSame([6.0], array_column($resultat, 'quantite'));
-        self::assertNotContains($tomates, array_column($resultat, 'denree'));
+        self::assertCount(1, $resultat);
+        self::assertSame('Farfadets', $resultat[0]['groupe']->getNom());
+        self::assertSame([$riz], array_column($resultat[0]['lignes'], 'denree'));
+        self::assertSame([6.0], array_column($resultat[0]['lignes'], 'quantite'));
+        self::assertNotContains($tomates, array_column($resultat[0]['lignes'], 'denree'));
     }
 
     /** @return array{array<string, mixed>, Denree, Denree, Denree, Menu} */
@@ -76,9 +78,9 @@ final class PreparationVuesDistributionTest extends TestCase
         $tomates = (new Denree())->setNom('Tomates')->setType(TypeDenree::FRUITS_LEGUMES)->setUniteReference($unite);
         $yaourts = (new Denree())->setNom('Yaourts')->setType(TypeDenree::FRAIS)->setUniteReference($unite);
         $grilleScout = new GrilleMenu('Scout', $date, $date);
-        $grilleCaisse = new GrilleMenu('Caisse', $date, $date);
+        $grilleCaisse = (new GrilleMenu('Caisse', $date, $date))->setTypeDistribution(TypeDistributionMenu::EN_CAISSE);
         $menuScout = (new Menu())->setGrilleMenu($grilleScout)->setDateMenu($date)->setTypeRepas($repas);
-        $menuCaisse = (new Menu())->setGrilleMenu($grilleCaisse)->setDateMenu($date)->setTypeRepas($repas)->setTypeDistribution(TypeDistributionMenu::EN_CAISSE);
+        $menuCaisse = (new Menu())->setGrilleMenu($grilleCaisse)->setDateMenu($date)->setTypeRepas($repas);
         $explo = (new Menu())->setGrilleMenu($grilleCaisse)->setSpecialCode('EXPLO');
         $groupe = (new Groupe())->setNom('Farfadets')->setType('farfadets')->setDateDebutPresence($date)->setDateFinPresence($date);
         $ligne = static fn (Denree $denree, float $quantite): array => ['denree' => $denree, 'regime' => null, 'quantite' => $quantite, 'unite' => $unite];

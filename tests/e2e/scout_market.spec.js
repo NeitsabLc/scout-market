@@ -34,17 +34,20 @@ test('une grille de menus datée peut être créée et modifiée', async ({ page
   await page.getByLabel('Libellé de la grille').fill(label);
   await page.getByLabel('Date de début').fill('2027-01-01');
   await page.getByLabel('Date de fin').fill('2027-12-31');
+  await page.getByLabel('Mode de distribution').selectOption({ label: 'Camp accompagné' });
   await page.getByRole('button', { name: 'Créer la grille' }).click();
 
   await expect(page.getByRole('heading', { name: label })).toBeVisible();
   await expect(page.locator('.menus-heading')).toContainText('01/01/2027 — 31/12/2027');
-  await page.getByRole('link', { name: 'Modifier le libellé et les dates' }).click();
+  await page.getByRole('link', { name: 'Paramètres de la grille' }).click();
   await page.getByLabel('Libellé de la grille').fill(`${label} modifiée`);
+  await page.getByLabel('Mode de distribution').selectOption({ label: 'Stage' });
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page.getByRole('heading', { name: `${label} modifiée` })).toBeVisible();
+  await expect(page.locator('.menus-heading')).toContainText('Distribution : Stage');
 });
 
-test('les distributions Scout Market et en caisse présentent les besoins attendus', async ({ page }) => {
+test('les distributions Camp accompagné et Stage présentent les besoins attendus', async ({ page }) => {
   await seConnecter(page, comptes.administrateur);
   await page.goto('/intendance/distribution/scout-market');
 
@@ -53,10 +56,11 @@ test('les distributions Scout Market et en caisse présentent les besoins attend
   await page.locator('.order-meal-card summary').first().click();
   await expect(page.getByRole('columnheader', { name: 'Quantité totale à sortir' })).toBeVisible();
 
-  await page.getByRole('link', { name: 'En caisse' }).click();
+  await page.getByRole('link', { name: 'Stage' }).click();
   await expect(page.getByText('Produits frais, fruits et légumes à regrouper dans la caisse quotidienne de chaque unité.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Produits secs à livrer' })).toBeVisible();
   await expect(page.locator('.dry-delivery-card')).toContainText('Pâtes');
+  await expect(page.locator('.dry-delivery-card')).toContainText('Farfadets de la Clairière');
   await expect(page.getByRole('heading', { name: 'Grille École des bois' }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Farfadets de la Clairière' }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Déjeuner italien' })).toHaveCount(0);
@@ -65,7 +69,7 @@ test('les distributions Scout Market et en caisse présentent les besoins attend
 
   const livraisonSeche = page.locator('.dry-delivery-card');
   await livraisonSeche.locator('summary').click();
-  await expect(livraisonSeche.locator('table')).not.toBeVisible();
+  await expect(livraisonSeche.locator('.dry-delivery-units')).not.toBeVisible();
 
   const premiereJournee = page.locator('.order-meal-card').first();
   await premiereJournee.locator('summary').click();
@@ -76,7 +80,7 @@ test('la commande tient compte des livraisons déjà effectuées', async ({ page
   await seConnecter(page, comptes.administrateur);
   await page.goto('/intendance/commande');
 
-  const secDejaLivre = page.getByRole('checkbox', { name: 'Sec en caisse déjà livrée' });
+  const secDejaLivre = page.getByRole('checkbox', { name: 'Sec des stages déjà livré' });
   const fraisDejaLivre = page.getByRole('checkbox', { name: 'Frais de la journée déjà livré' });
   await expect(secDejaLivre).toBeVisible();
   await expect(fraisDejaLivre).toBeVisible();
@@ -86,7 +90,7 @@ test('la commande tient compte des livraisons déjà effectuées', async ({ page
 
   await expect(secDejaLivre).toBeChecked();
   await expect(fraisDejaLivre).toBeChecked();
-  await expect(page.locator('.final-order-summary')).toContainText('Sec des grilles en caisse déjà livré');
+  await expect(page.locator('.final-order-summary')).toContainText('Sec des stages déjà livré');
   await expect(page.locator('.final-order-summary')).toContainText('Journée initiale déjà livrée');
 });
 
