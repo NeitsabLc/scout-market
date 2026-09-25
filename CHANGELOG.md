@@ -1,5 +1,11 @@
 # Historique des versions
 
+## [1.1.0](https://gitlab.com/neitsablc/scout-market/compare/v1.0.1...v1.1.0) (2026-09-25)
+
+### Fonctionnalités
+
+* **distribution:** configurer le mode par grille ([eab3f48](https://gitlab.com/neitsablc/scout-market/commit/eab3f48e792a661edd9910cc7bfe31afbde287ae))
+
 ## [1.0.1](https://gitlab.com/neitsablc/scout-market/compare/v1.0.0...v1.0.1) (2026-09-10)
 
 ### Corrections
