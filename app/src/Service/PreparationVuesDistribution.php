@@ -22,7 +22,7 @@ final class PreparationVuesDistribution
             /** @var array<string, array<string, mixed>> $lignes */
             $lignes = [];
             foreach ($commande['grilles'] as $grille) {
-                if (TypeDistributionMenu::SCOUT_MARKET !== $grille['menu']->getTypeDistribution()) {
+                if (TypeDistributionMenu::SCOUT_MARKET !== $grille['grille']->getTypeDistribution()) {
                     continue;
                 }
                 foreach ($grille['lignes'] as $ligne) {
@@ -53,7 +53,7 @@ final class PreparationVuesDistribution
             }
             $cleDate = $date->format('Y-m-d');
             foreach ($commande['grilles'] as $grille) {
-                if (TypeDistributionMenu::EN_CAISSE !== $grille['menu']->getTypeDistribution()) {
+                if (TypeDistributionMenu::EN_CAISSE !== $grille['grille']->getTypeDistribution()) {
                     continue;
                 }
                 $cleGrille = (string) $grille['grille']->getId();
@@ -98,26 +98,38 @@ final class PreparationVuesDistribution
     /**
      * @param list<array{menu: Menu, lignes: list<array<string, mixed>>, grilles: list<array<string, mixed>>}> $commandes
      *
-     * @return list<array<string, mixed>>
+     * @return list<array{groupe: \App\Entity\Groupe, lignes: list<array<string, mixed>>}>
      */
     public function produitsSecsEnCaisse(array $commandes): array
     {
-        /** @var array<string, array<string, mixed>> $lignes */
-        $lignes = [];
+        /** @var array<string, array{groupe: \App\Entity\Groupe, lignes: array<string, array<string, mixed>>}> $unites */
+        $unites = [];
         foreach ($commandes as $commande) {
             foreach ($commande['grilles'] as $grille) {
-                if (TypeDistributionMenu::EN_CAISSE !== $grille['menu']->getTypeDistribution()) {
+                if (TypeDistributionMenu::EN_CAISSE !== $grille['grille']->getTypeDistribution()) {
                     continue;
                 }
-                foreach ($grille['lignes'] as $ligne) {
-                    if (TypeDenree::SEC === $ligne['denree']->getType()) {
-                        $this->ajouterLigne($lignes, $ligne);
+                foreach ($grille['unites'] as $unite) {
+                    $cleUnite = (string) $unite['groupe']->getId();
+                    foreach ($unite['lignes'] as $ligne) {
+                        if (TypeDenree::SEC !== $ligne['denree']->getType()) {
+                            continue;
+                        }
+                        $unites[$cleUnite] ??= ['groupe' => $unite['groupe'], 'lignes' => []];
+                        $this->ajouterLigne($unites[$cleUnite]['lignes'], $ligne);
                     }
                 }
             }
         }
 
-        return $this->trierLignes($lignes);
+        $resultat = [];
+        foreach ($unites as $unite) {
+            $unite['lignes'] = $this->trierLignes($unite['lignes']);
+            $resultat[] = $unite;
+        }
+        usort($resultat, static fn (array $a, array $b): int => strnatcasecmp($a['groupe']->getNom(), $b['groupe']->getNom()));
+
+        return $resultat;
     }
 
     /**

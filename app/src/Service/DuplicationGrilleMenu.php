@@ -24,14 +24,14 @@ final readonly class DuplicationGrilleMenu
 
     public function dupliquer(GrilleMenu $source): GrilleMenu
     {
-        $copie = new GrilleMenu($this->prochainLabel($source), $source->getDateDebut(), $source->getDateFin());
+        $copie = (new GrilleMenu($this->prochainLabel($source), $source->getDateDebut(), $source->getDateFin()))
+            ->setTypeDistribution($source->getTypeDistribution());
         $this->entityManager->persist($copie);
 
         foreach ($this->menus->findActifsPourGrille($source) as $menuSource) {
             $menuCopie = (new Menu())
                 ->setGrilleMenu($copie)
-                ->setNom($menuSource->getNom())
-                ->setTypeDistribution($menuSource->getTypeDistribution());
+                ->setNom($menuSource->getNom());
             if ($menuSource->isSpecial()) {
                 $menuCopie->setSpecialCode($menuSource->getSpecialCode());
             } elseif (null !== $menuSource->getDateMenu() && null !== $menuSource->getTypeRepas()) {

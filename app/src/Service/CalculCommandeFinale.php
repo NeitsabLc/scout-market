@@ -112,7 +112,7 @@ final class CalculCommandeFinale
     /**
      * @param array{
      *     lignes: list<array{denree: Denree, regime: ?\App\Enum\RegimeAlimentaire, quantite: float, unite: \App\Entity\Unite}>,
-     *     grilles?: list<array{menu: \App\Entity\Menu, lignes: list<array{denree: Denree, regime: ?\App\Enum\RegimeAlimentaire, quantite: float, unite: \App\Entity\Unite}>}>
+     *     grilles?: list<array{grille: \App\Entity\GrilleMenu, menu: \App\Entity\Menu, lignes: list<array{denree: Denree, regime: ?\App\Enum\RegimeAlimentaire, quantite: float, unite: \App\Entity\Unite}>}>
      * } $commande
      *
      * @return list<array{denree: Denree, regime: ?\App\Enum\RegimeAlimentaire, quantite: float, unite: \App\Entity\Unite}>
@@ -125,7 +125,7 @@ final class CalculCommandeFinale
 
         $lignes = [];
         foreach ($commande['grilles'] as $grille) {
-            $estDistribueeEnCaisse = TypeDistributionMenu::EN_CAISSE === $grille['menu']->getTypeDistribution();
+            $estDistribueeEnCaisse = TypeDistributionMenu::EN_CAISSE === $grille['grille']->getTypeDistribution();
             foreach ($grille['lignes'] as $ligne) {
                 if ($estDistribueeEnCaisse && TypeDenree::SEC === $ligne['denree']->getType()) {
                     continue;

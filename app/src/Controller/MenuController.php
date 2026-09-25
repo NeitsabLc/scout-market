@@ -73,6 +73,7 @@ final class MenuController extends AbstractController
         $label = trim($request->request->getString('label'));
         $dateDebutSaisie = $this->date($request->request->getString('date_debut'));
         $dateFinSaisie = $this->date($request->request->getString('date_fin'));
+        $typeDistribution = TypeDistributionMenu::tryFrom($request->request->getString('type_distribution')) ?? TypeDistributionMenu::SCOUT_MARKET;
         $dateDebut = $dateDebutSaisie ?? new \DateTimeImmutable('today');
         $dateFin = $dateFinSaisie ?? $dateDebut;
         $erreurs = [];
@@ -90,8 +91,11 @@ final class MenuController extends AbstractController
             if (null === $dateDebutSaisie || null === $dateFinSaisie || $dateFin < $dateDebut) {
                 $erreurs[] = 'Saisissez une période valide.';
             }
+            if (null === TypeDistributionMenu::tryFrom($request->request->getString('type_distribution'))) {
+                $erreurs[] = 'Sélectionnez un mode de distribution.';
+            }
             if ([] === $erreurs) {
-                $grille = new GrilleMenu($label, $dateDebut, $dateFin);
+                $grille = (new GrilleMenu($label, $dateDebut, $dateFin))->setTypeDistribution($typeDistribution);
                 $entityManager->persist($grille);
                 $entityManager->flush();
                 $this->addFlash('success', sprintf('La grille « %s » a bien été créée.', $label));
@@ -100,7 +104,10 @@ final class MenuController extends AbstractController
             }
         }
 
-        return $this->render('menu/formulaire_grille.html.twig', compact('label', 'dateDebut', 'dateFin', 'erreurs'));
+        return $this->render('menu/formulaire_grille.html.twig', [
+            'label' => $label, 'dateDebut' => $dateDebut, 'dateFin' => $dateFin, 'erreurs' => $erreurs,
+            'typeDistribution' => $typeDistribution, 'typesDistribution' => TypeDistributionMenu::choix(),
+        ]);
     }
 
     #[Route('/menus/grilles/{id}/parametres', name: 'app_grille_menu_parametres', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['GET', 'POST'])]
@@ -114,6 +121,9 @@ final class MenuController extends AbstractController
         $label = $request->isMethod('POST') ? trim($request->request->getString('label')) : $grille->getLabel();
         $dateDebut = $request->isMethod('POST') ? $this->date($request->request->getString('date_debut')) : $grille->getDateDebut();
         $dateFin = $request->isMethod('POST') ? $this->date($request->request->getString('date_fin')) : $grille->getDateFin();
+        $typeDistribution = $request->isMethod('POST')
+            ? TypeDistributionMenu::tryFrom($request->request->getString('type_distribution'))
+            : $grille->getTypeDistribution();
         $erreurs = [];
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('modifier_grille_menu_'.$id, $request->request->getString('_token'))) {
@@ -127,8 +137,11 @@ final class MenuController extends AbstractController
             if (null === $dateDebut || null === $dateFin || $dateFin < $dateDebut) {
                 $erreurs[] = 'Saisissez une période valide.';
             }
+            if (null === $typeDistribution) {
+                $erreurs[] = 'Sélectionnez un mode de distribution.';
+            }
             if ([] === $erreurs) {
-                $grille->setLabel($label)->setDates($dateDebut, $dateFin);
+                $grille->setLabel($label)->setDates($dateDebut, $dateFin)->setTypeDistribution($typeDistribution);
                 $entityManager->flush();
                 $this->addFlash('success', 'La grille de menus a bien été modifiée.');
 
@@ -136,7 +149,10 @@ final class MenuController extends AbstractController
             }
         }
 
-        return $this->render('menu/formulaire_grille.html.twig', ['grille' => $grille, 'label' => $label, 'dateDebut' => $dateDebut, 'dateFin' => $dateFin, 'erreurs' => $erreurs]);
+        return $this->render('menu/formulaire_grille.html.twig', [
+            'grille' => $grille, 'label' => $label, 'dateDebut' => $dateDebut, 'dateFin' => $dateFin, 'erreurs' => $erreurs,
+            'typeDistribution' => $typeDistribution, 'typesDistribution' => TypeDistributionMenu::choix(),
+        ]);
     }
 
     #[Route('/menus/grilles/{id}/dupliquer', name: 'app_grille_menu_dupliquer', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['POST'])]
@@ -222,7 +238,6 @@ final class MenuController extends AbstractController
                         'special' => null,
                         'menu' => $menus->findPourRepasGrille($grille, $date, $configuration),
                         'avec_categories' => $presentation->avecCategories($configuration->getCode()),
-                        'type_distribution' => is_array($donneesRepas) ? (string) ($donneesRepas['type_distribution'] ?? '') : '',
                         'lignes' => is_array($donneesRepas) && is_array($donneesRepas['lignes'] ?? null) ? $donneesRepas['lignes'] : [],
                     ];
                 }
@@ -232,20 +247,11 @@ final class MenuController extends AbstractController
                     'special' => $special,
                     'menu' => $menu,
                     'avec_categories' => $avecCategories,
-                    'type_distribution' => $request->request->getString('type_distribution'),
                     'lignes' => $request->request->all('lignes'),
                 ];
             }
 
             foreach ($soumissions as $soumission) {
-                $typeDistribution = null !== $soumission['special']
-                    ? TypeDistributionMenu::SCOUT_MARKET
-                    : TypeDistributionMenu::tryFrom($soumission['type_distribution']);
-                if (null === $typeDistribution) {
-                    $this->addFlash('error', sprintf('Sélectionnez un mode de distribution pour le repas %s.', $soumission['repas']->getLibelle()));
-
-                    return $this->redirectMenu($grille, $date, $repasSelectionne, $special);
-                }
                 $composition = [];
                 foreach ($soumission['lignes'] as $donneesLigne) {
                     if (!is_array($donneesLigne)) {
@@ -291,7 +297,7 @@ final class MenuController extends AbstractController
                 if (null !== $soumission['special']) {
                     $menuCible->setSpecialCode($soumission['special']);
                 } else {
-                    $menuCible->setDateMenu($date)->setTypeRepas($soumission['repas'])->setTypeDistribution($typeDistribution);
+                    $menuCible->setDateMenu($date)->setTypeRepas($soumission['repas']);
                 }
                 foreach ($menuCible->getDenrees()->toArray() as $ancienne) {
                     $menuCible->removeDenree($ancienne);
@@ -332,7 +338,7 @@ final class MenuController extends AbstractController
             $codeRepas = $configuration->getCode();
             $menuDate = $menusDateParRepas[(string) $configuration->getId()] ?? null;
             $categories = $presentation->avecCategories($codeRepas);
-            $editeursMenus[] = ['id' => (string) $configuration->getId(), 'code' => $codeRepas, 'libelle' => $configuration->getLibelle(), 'renseigne' => null !== $menuDate && !$menuDate->getDenrees()->isEmpty(), 'type_distribution' => ($menuDate?->getTypeDistribution() ?? TypeDistributionMenu::SCOUT_MARKET)->value, 'avec_categories' => $categories, 'categories_recettes' => $presentation->categoriesRecettesPourRepas($codeRepas), 'composition' => $presentation->composition($menuDate, $categories)];
+            $editeursMenus[] = ['id' => (string) $configuration->getId(), 'code' => $codeRepas, 'libelle' => $configuration->getLibelle(), 'renseigne' => null !== $menuDate && !$menuDate->getDenrees()->isEmpty(), 'avec_categories' => $categories, 'categories_recettes' => $presentation->categoriesRecettesPourRepas($codeRepas), 'composition' => $presentation->composition($menuDate, $categories)];
         }
         $editeursSpeciaux = [];
         foreach (self::SPECIAUX as $code => $libelle) {
@@ -344,7 +350,6 @@ final class MenuController extends AbstractController
             'grille' => $grille, 'page_speciaux' => $pageSpeciaux, 'repas' => $repas, 'repas_selectionne' => $repasSelectionne,
             'repas_suivant' => $repasSuivant, 'date_selectionnee' => $date, 'menu' => $menu, 'special' => $special, 'specials' => self::SPECIAUX,
             'publicsCibles' => $publicsActifs, 'catalogue' => $catalogue, 'regimes' => RegimeAlimentaire::choix(), 'recettes' => $recettesActives,
-            'types_distribution' => TypeDistributionMenu::choix(),
             'recettes_json' => $presentation->recettesJson($recettesActives), 'categories_recettes' => null === $special ? $presentation->categoriesRecettesPourRepas($repasSelectionne->getCode()) : null,
             'avec_categories' => $avecCategories, 'editeurs_menus' => $editeursMenus, 'editeurs_speciaux' => $editeursSpeciaux, 'lecture_seule' => false,
             'date_libelle' => $presentation->libelleDate($date), 'jour_precedent' => $date > $grille->getDateDebut() ? $date->modify('-1 day') : null,

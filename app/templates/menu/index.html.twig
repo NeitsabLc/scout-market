@@ -12,9 +12,9 @@
     <section class="menu-extras"><h4>Denrées supplémentaires</h4><div class="food-table">{{ _self.table_header(publicsCibles) }}<div data-extra-rows>{% for ligne in composition.supplementaires|default([]) %}{{ _self.food_line(ligne, publicsCibles, categorie, '', '', regimes) }}{% endfor %}</div></div></section>
 {% endmacro %}
 {% macro meal_icon(code) %}<span class="group-menu-meal__icon" aria-hidden="true">{% if code == 'PETIT_DEJEUNER' %}<svg viewBox="0 0 24 24"><path d="M5 9h11v5a5 5 0 0 1-5 5H9a4 4 0 0 1-4-4V9Zm11 2h1.5a2.5 2.5 0 0 1 0 5H16M8 5c0 1 1 1 1 2m3-2c0 1 1 1 1 2"/></svg>{% elseif code == 'DEJEUNER' %}<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>{% elseif code == 'GOUTER' %}<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-8-8 3 3 0 0 0 4 4 3 3 0 0 0 4 4Z"/><circle cx="8.5" cy="13.5" r=".7"/><circle cx="11" cy="17" r=".7"/><circle cx="7.5" cy="9" r=".7"/></svg>{% elseif code == 'DINER' %}<svg viewBox="0 0 24 24"><path d="M20 15.5A8 8 0 0 1 8.5 4 8 8 0 1 0 20 15.5Z"/></svg>{% else %}<svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg>{% endif %}</span>{% endmacro %}
-{% macro inline_editor(editeur, action, token, recettes, catalogue, publicsCibles, regimes, typesDistribution, special) %}
+{% macro inline_editor(editeur, action, token, recettes, catalogue, publicsCibles, regimes, special) %}
     <section class="manager-inline-meal" id="{{ special ? 'menu-' ~ editeur.code|lower : 'repas-' ~ editeur.id }}" data-menu-editor-section{% if not special %} data-field-prefix="repas[{{ editeur.id }}][lignes]"{% endif %}>
-        <header class="manager-inline-meal__heading">{{ _self.meal_icon(editeur.code) }}<div><h2>{{ editeur.libelle }}</h2><small>{{ editeur.renseigne ? 'Menu renseigné' : 'À compléter' }}</small></div>{% if not special %}<label class="menu-distribution-type">Distribution<select name="repas[{{ editeur.id }}][type_distribution]" required>{% for code, libelle in typesDistribution %}<option value="{{ code }}"{{ editeur.type_distribution == code ? ' selected' : '' }}>{{ libelle }}</option>{% endfor %}</select></label>{% endif %}</header>
+        <header class="manager-inline-meal__heading">{{ _self.meal_icon(editeur.code) }}<div><h2>{{ editeur.libelle }}</h2><small>{{ editeur.renseigne ? 'Menu renseigné' : 'À compléter' }}</small></div></header>
         {% if special %}<form method="post" action="{{ action }}"><input type="hidden" name="_token" value="{{ token }}">{% endif %}<fieldset class="menu-readonly-scope">
             {% if editeur.avec_categories %}
                 <div class="menu-categories">{% for code, libelle in {'ENTREE':'Entrée','PLAT':'Plat','FROMAGE':'Fromage','DESSERT':'Dessert'} %}
@@ -37,7 +37,7 @@
 {% block body %}
 <main class="menus-page{{ avec_categories|default(false) ? ' menus-page--categorized' : '' }}" data-controller="menu-editor" data-public-count="{{ publicsCibles|default([])|length }}">
     <nav class="food-breadcrumb"><a href="{{ path('app_menus') }}">Grilles de menus</a><span>/</span><span>{{ grille.label }}</span></nav>
-    <header class="menus-heading"><div><h1>{{ grille.label }}</h1><p>{{ grille.dateDebut|date('d/m/Y') }} — {{ grille.dateFin|date('d/m/Y') }} · {{ page_speciaux|default(false) ? 'Repas spéciaux' : 'Repas standards' }}</p></div><div class="food-actions"><a class="food-secondary" href="{{ path('app_grille_menu_parametres', {id: grille.id}) }}">Modifier le libellé et les dates</a><a class="food-primary menus-heading__action" href="{{ path(page_speciaux|default(false) ? 'app_grille_menu_modifier' : 'app_grille_menu_speciaux', {id: grille.id}) }}">{{ page_speciaux|default(false) ? 'Repas standards' : 'Repas spéciaux' }}</a></div></header>
+    <header class="menus-heading"><div><h1>{{ grille.label }}</h1><p>{{ grille.dateDebut|date('d/m/Y') }} — {{ grille.dateFin|date('d/m/Y') }} · {{ page_speciaux|default(false) ? 'Repas spéciaux' : 'Repas standards' }} · Distribution : {{ grille.typeDistribution.libelle }}</p></div><div class="food-actions"><a class="food-secondary" href="{{ path('app_grille_menu_parametres', {id: grille.id}) }}">Paramètres de la grille</a><a class="food-primary menus-heading__action" href="{{ path(page_speciaux|default(false) ? 'app_grille_menu_modifier' : 'app_grille_menu_speciaux', {id: grille.id}) }}">{{ page_speciaux|default(false) ? 'Repas standards' : 'Repas spéciaux' }}</a></div></header>
     {% for m in app.flashes('success') %}<div class="flash flash--success" role="status">{{ m }}</div>{% endfor %}
     {% for m in app.flashes('error') %}<div class="flash flash--error" role="alert">{{ m }}</div>{% endfor %}
     {% if repas is empty %}<section class="empty-state"><h2>Aucun repas disponible</h2></section>
@@ -57,7 +57,6 @@
             catalogue,
             publicsCibles,
             regimes,
-            types_distribution,
             false
         ) }}{% endfor %}</div><div class="manager-day-form__actions"><button class="save-meal-button" type="submit">Enregistrer la journée</button></div></form>
         {% else %}
@@ -70,7 +69,6 @@
             catalogue,
             publicsCibles,
             regimes,
-            types_distribution,
             true
         ) }}{% endfor %}</div>
         {% endif %}

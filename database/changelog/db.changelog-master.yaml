@@ -2,3 +2,9 @@ databaseChangeLog:
   - include:
       file: V001__initialisation_scout_market.sql
       relativeToChangelogFile: true
+  - include:
+      file: V002__distribution_par_grille.sql
+      relativeToChangelogFile: true
+  - include:
+      file: V003__completer_quantites_recettes.sql
+      relativeToChangelogFile: true

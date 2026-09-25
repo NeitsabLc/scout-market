@@ -71,7 +71,7 @@
                     <header><span><small>Section</small><strong>Flux</strong></span><button type="button" data-sidebar-panel-close aria-label="Fermer le sous-menu">×</button></header>
                     <nav aria-label="Sous-menu Flux">
                         <a href="{{ path('app_mouvements_stock') }}"{{ app.current_route starts with 'app_mouvement' ? ' aria-current="page"' : '' }}><span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/></svg></span><span><strong>Mouvements de stock</strong><small>Entrées et sorties</small></span></a>
-                        <a href="{{ path('app_distribution_scout_market') }}"{{ app.current_route starts with 'app_distribution' ? ' aria-current="page"' : '' }}><span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h12M12 8l4 4-4 4M19 5v14"/></svg></span><span><strong>Distribution</strong><small>Scout Market et caisses</small></span></a>
+                        <a href="{{ path('app_distribution_scout_market') }}"{{ app.current_route starts with 'app_distribution' ? ' aria-current="page"' : '' }}><span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h12M12 8l4 4-4 4M19 5v14"/></svg></span><span><strong>Distribution</strong><small>Camps accompagnés et stages</small></span></a>
                         <a href="{{ path('app_commande') }}"{{ app.current_route == 'app_commande' ? ' aria-current="page"' : '' }}><span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h2l2 10h9l2-7H7M10 19h.01M17 19h.01"/></svg></span><span><strong>Commande</strong><small>Quantités à commander</small></span></a>
                     </nav>
                 </div>

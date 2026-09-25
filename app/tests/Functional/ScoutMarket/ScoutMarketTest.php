@@ -58,12 +58,15 @@ final class ScoutMarketTest extends WebTestCase
             'label' => $labelInitial,
             'date_debut' => '2027-01-10',
             'date_fin' => '2027-01-20',
+            'type_distribution' => TypeDistributionMenu::SCOUT_MARKET->value,
         ]));
         self::assertResponseRedirects();
         $client->followRedirect();
         self::assertSelectorTextContains('h1', $labelInitial);
         self::assertSelectorTextContains('.menus-heading', '10/01/2027 — 20/01/2027');
+        self::assertSelectorTextContains('.menus-heading', 'Distribution : Camp accompagné');
         self::assertSelectorExists('a[href$="/parametres"]');
+        self::assertSelectorNotExists('select[name*="type_distribution"]');
 
         $grille = static::getContainer()->get(GrilleMenuRepository::class)->findOneBy(['label' => $labelInitial]);
         self::assertInstanceOf(GrilleMenu::class, $grille);
@@ -73,30 +76,24 @@ final class ScoutMarketTest extends WebTestCase
             'label' => $labelFinal,
             'date_debut' => '2027-02-01',
             'date_fin' => '2027-12-31',
+            'type_distribution' => TypeDistributionMenu::EN_CAISSE->value,
         ]));
         self::assertResponseRedirects('/menus/grilles/'.$grille->getId());
         $client->followRedirect();
         self::assertSelectorTextContains('h1', $labelFinal);
         self::assertSelectorTextContains('.menus-heading', '01/02/2027 — 31/12/2027');
+        self::assertSelectorTextContains('.menus-heading', 'Distribution : Stage');
 
         $typeRepas = static::getContainer()->get(TypeRepasRepository::class)->findActifs();
-        $valeurs = [];
-        foreach ($typeRepas as $index => $type) {
-            $valeurs[sprintf('repas[%s][type_distribution]', $type->getId())] = 0 === $index
-                ? TypeDistributionMenu::EN_CAISSE->value
-                : TypeDistributionMenu::SCOUT_MARKET->value;
-        }
-        $client->submit($client->getCrawler()->selectButton('Enregistrer la journée')->form($valeurs));
+        $client->submit($client->getCrawler()->selectButton('Enregistrer la journée')->form());
         self::assertResponseRedirects();
         $menus = static::getContainer()->get(MenuRepository::class)->findPourDateGrille($grille, new \DateTimeImmutable('2027-02-01'));
         self::assertCount(count($typeRepas), $menus);
-        $modes = array_map(static fn (Menu $menu): TypeDistributionMenu => $menu->getTypeDistribution(), $menus);
-        self::assertContains(TypeDistributionMenu::EN_CAISSE, $modes);
-        self::assertContains(TypeDistributionMenu::SCOUT_MARKET, $modes);
 
         $entityManager = static::getContainer()->get(EntityManagerInterface::class);
         $grillePersistante = $entityManager->find(GrilleMenu::class, $grille->getId());
         self::assertInstanceOf(GrilleMenu::class, $grillePersistante);
+        self::assertSame(TypeDistributionMenu::EN_CAISSE, $grillePersistante->getTypeDistribution());
         $entityManager->remove($grillePersistante);
         $entityManager->flush();
     }
@@ -187,8 +184,8 @@ final class ScoutMarketTest extends WebTestCase
 
         $client->request('GET', '/intendance/distribution/scout-market');
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('.distribution-tabs', 'Scout Market');
-        self::assertSelectorTextContains('.distribution-tabs', 'En caisse');
+        self::assertSelectorTextContains('.distribution-tabs', 'Camp accompagné');
+        self::assertSelectorTextContains('.distribution-tabs', 'Stage');
         self::assertSelectorTextContains('.order-calculation-note', 'Explo, pique-nique et repas non pris');
 
         $client->request('GET', '/intendance/distribution/en-caisse');
