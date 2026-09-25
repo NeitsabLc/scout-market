@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Service;
 
 use App\Entity\Denree;
+use App\Entity\GrilleMenu;
 use App\Entity\Menu;
 use App\Entity\MenuDenree;
 use App\Entity\Recette;
@@ -12,6 +13,7 @@ use App\Entity\RecetteDenree;
 use App\Entity\TypeRepas;
 use App\Entity\Unite;
 use App\Enum\RegimeAlimentaire;
+use App\Enum\TypeDistributionMenu;
 use App\Service\PresentationMenu;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -130,5 +132,24 @@ final class PresentationMenuTest extends TestCase
             ['Salade', 'Poisson', 'Ingrédient Brie', 'Ingrédient Tarte'],
             (new PresentationMenu())->resumesMenus([$menu])[0]['elements'],
         );
+    }
+
+    public function testLesMenusDuTableauDeBordSontRegroupesParGrille(): void
+    {
+        $repas = new TypeRepas('DEJEUNER', 'Déjeuner', 1);
+        $grilleStage = (new GrilleMenu('Stage cuisine'))->setTypeDistribution(TypeDistributionMenu::EN_CAISSE);
+        $grilleCamp = new GrilleMenu('Camp accompagné');
+        $menuStage = (new Menu())->setGrilleMenu($grilleStage)->setTypeRepas($repas)->setNom('Menu du stage');
+        $menuCamp = (new Menu())->setGrilleMenu($grilleCamp)->setTypeRepas($repas)->setNom('Menu du camp');
+
+        $groupes = (new PresentationMenu())->resumesMenusParGrille([$menuStage, $menuCamp]);
+
+        self::assertCount(2, $groupes);
+        self::assertSame('Stage cuisine', $groupes[0]['label']);
+        self::assertSame('Stage', $groupes[0]['distribution']);
+        self::assertSame('DEJEUNER', $groupes[0]['menus'][0]['code']);
+        self::assertSame('Menu du stage', $groupes[0]['menus'][0]['nom']);
+        self::assertSame('Camp accompagné', $groupes[1]['label']);
+        self::assertSame('Camp accompagné', $groupes[1]['distribution']);
     }
 }

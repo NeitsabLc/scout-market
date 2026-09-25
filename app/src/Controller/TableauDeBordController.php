@@ -73,7 +73,7 @@ final class TableauDeBordController extends AbstractController
             'nombre_grilles' => count($grilles->findActives()),
             'nombre_recettes' => $recettes->countActives(),
             'resume_unites' => $resumeUnites,
-            'menus_du_jour' => $presentation->resumesMenus($menus->findPourDate($aujourdhui)),
+            'grilles_menus_du_jour' => $presentation->resumesMenusParGrille($menus->findPourDate($aujourdhui)),
         ]);
     }
 }
