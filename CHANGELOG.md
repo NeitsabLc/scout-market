@@ -1,5 +1,11 @@
 # Historique des versions
 
+## [1.2.0](https://gitlab.com/neitsablc/scout-market/compare/v1.1.0...v1.2.0) (2026-09-25)
+
+### Fonctionnalités
+
+* améliorer les menus du jour et les invitations ([ae331b3](https://gitlab.com/neitsablc/scout-market/commit/ae331b3a11b73b89bf936851ef2fc0523cb7c7c9))
+
 ## [1.1.0](https://gitlab.com/neitsablc/scout-market/compare/v1.0.1...v1.1.0) (2026-09-25)
 
 ### Fonctionnalités
