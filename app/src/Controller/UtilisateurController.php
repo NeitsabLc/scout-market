@@ -119,4 +119,17 @@ final class UtilisateurController extends AbstractController
 
         return $this->redirectToRoute('app_utilisateurs');
     }
+
+    #[Route('/utilisateurs/{id}/invitation', name: 'app_utilisateur_invitation', methods: ['POST'])]
+    public function renvoyerInvitation(Utilisateur $utilisateur, Request $request, InvitationUtilisateur $invitation): Response
+    {
+        if (!$this->isCsrfTokenValid('invitation_utilisateur_'.$utilisateur->getId(), $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException('Jeton CSRF invalide.');
+        }
+
+        $invitation->envoyer($utilisateur);
+        $this->addFlash('success', sprintf('Une nouvelle invitation a été envoyée à %s.', $utilisateur->getEmail()));
+
+        return $this->redirectToRoute('app_utilisateur_modifier', ['id' => $utilisateur->getId()]);
+    }
 }

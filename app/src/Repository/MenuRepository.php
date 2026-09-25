@@ -55,9 +55,10 @@ final class MenuRepository extends ServiceEntityRepository
     public function findPourDate(\DateTimeImmutable $date): array
     {
         return $this->requeteComplete()
+            ->innerJoin('menu.grilleMenu', 'grille')->addSelect('grille')
             ->andWhere('menu.dateMenu = :date')->andWhere('menu.actif = true')
-            ->andWhere('typeRepas.actif = true')->setParameter('date', $date)
-            ->orderBy('typeRepas.ordre', 'ASC')->addOrderBy('menuDenree.ordre', 'ASC')
+            ->andWhere('typeRepas.actif = true')->andWhere('grille.actif = true')->setParameter('date', $date)
+            ->orderBy('grille.label', 'ASC')->addOrderBy('typeRepas.ordre', 'ASC')->addOrderBy('menuDenree.ordre', 'ASC')
             ->getQuery()->getResult();
     }
 

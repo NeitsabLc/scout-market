@@ -133,6 +133,44 @@ final class ScoutMarketTest extends WebTestCase
         }
     }
 
+    public function testLaFicheUtilisateurPermetDeRenvoyerLInvitation(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->administrateur());
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $utilisateur = $this->gestionnaire();
+        $entityManager->persist($utilisateur);
+        $entityManager->flush();
+        $utilisateurId = (string) $utilisateur->getId();
+        $motDePasseInitial = $utilisateur->getPassword();
+
+        try {
+            $crawler = $client->request('GET', '/utilisateurs/'.$utilisateurId.'/modifier');
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorExists('form[action="/utilisateurs/'.$utilisateurId.'/invitation"]');
+            $client->submit($crawler->selectButton('Renvoyer le mail d’invitation')->form());
+
+            self::assertResponseRedirects('/utilisateurs/'.$utilisateurId.'/modifier');
+            $client->followRedirect();
+            self::assertSelectorTextContains('.flash--success', 'Une nouvelle invitation a été envoyée à '.$utilisateur->getEmail().'.');
+
+            $entityManager->clear();
+            $utilisateurInvite = $entityManager->find(Utilisateur::class, $utilisateurId);
+            self::assertInstanceOf(Utilisateur::class, $utilisateurInvite);
+            self::assertNotSame($motDePasseInitial, $utilisateurInvite->getPassword());
+            self::assertTrue($utilisateurInvite->isChangementMotDePasseRequis());
+            self::assertNotNull($utilisateurInvite->getJetonReinitialisation());
+        } finally {
+            $entityManager->clear();
+            $utilisateurPersistant = $entityManager->find(Utilisateur::class, $utilisateurId);
+            if (null !== $utilisateurPersistant) {
+                $entityManager->remove($utilisateurPersistant);
+                $entityManager->flush();
+            }
+        }
+    }
+
     public function testLeTableauDeBordAfficheLesEffectifsEtBesoinsDesUnitesPresentes(): void
     {
         $client = static::createClient();

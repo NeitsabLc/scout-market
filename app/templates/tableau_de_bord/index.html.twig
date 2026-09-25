@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+{% macro meal_icon(code) %}<span class="home-menu-meal__icon" aria-hidden="true">{% if code == 'PETIT_DEJEUNER' %}<svg viewBox="0 0 24 24"><path d="M5 9h11v5a5 5 0 0 1-5 5H9a4 4 0 0 1-4-4V9Zm11 2h1.5a2.5 2.5 0 0 1 0 5H16M8 5c0 1 1 1 1 2m3-2c0 1 1 1 1 2"/></svg>{% elseif code == 'DEJEUNER' %}<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>{% elseif code == 'GOUTER' %}<svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-8-8 3 3 0 0 0 4 4 3 3 0 0 0 4 4Z"/><circle cx="8.5" cy="13.5" r=".7"/><circle cx="11" cy="17" r=".7"/><circle cx="7.5" cy="9" r=".7"/></svg>{% elseif code == 'DINER' %}<svg viewBox="0 0 24 24"><path d="M20 15.5A8 8 0 0 1 8.5 4 8 8 0 1 0 20 15.5Z"/></svg>{% else %}<svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg>{% endif %}</span>{% endmacro %}
 
 {% block title %}Accueil — Scout Market{% endblock %}
 
@@ -55,11 +56,32 @@
 
     <section class="home-panel" aria-labelledby="menus-title">
         <header class="home-panel__header"><div><h2 id="menus-title">Au menu aujourd’hui</h2><p>{{ aujourdhui|date('d/m/Y') }}</p></div><a href="{{ path('app_menus') }}">Voir les menus</a></header>
-        <div class="home-meals">
-            {% for menu in menus_du_jour %}
-                <article><h3>{{ menu.libelle }}</h3>{% if menu.nom %}<strong>{{ menu.nom }}</strong>{% endif %}<p>{{ menu.elements is empty ? 'Menu non renseigné' : menu.elements|join(' · ') }}</p></article>
-            {% else %}<p class="home-empty-copy">Aucun menu n’est renseigné pour aujourd’hui.</p>{% endfor %}
-        </div>
+        {% if grilles_menus_du_jour is empty %}
+            <p class="home-empty-copy">Aucun menu n’est renseigné pour aujourd’hui.</p>
+        {% else %}
+            <div class="home-menu-grids">
+                {% for grille in grilles_menus_du_jour %}
+                    <article class="home-menu-grid">
+                        <header class="home-menu-grid__header">
+                            <div class="home-menu-grid__title">
+                                <span class="home-menu-grid__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+                                <div><h3>{{ grille.label }}</h3><small>{{ grille.menus|length }} repas prévu{{ grille.menus|length > 1 ? 's' : '' }} aujourd’hui</small></div>
+                            </div>
+                            <div class="home-menu-grid__meta"><span>{{ grille.distribution }}</span><a href="{{ path('app_grille_menu_modifier', {id: grille.id, date: aujourdhui|date('Y-m-d')}) }}">Ouvrir la grille</a></div>
+                        </header>
+                        <div class="home-menu-grid__meals">
+                            {% for menu in grille.menus %}
+                                <section class="home-menu-meal">
+                                    <h4>{{ _self.meal_icon(menu.code) }}<span>{{ menu.libelle }}</span></h4>
+                                    {% if menu.nom %}<strong>{{ menu.nom }}</strong>{% endif %}
+                                    <p>{{ menu.elements is empty ? 'Menu non renseigné' : menu.elements|join(' · ') }}</p>
+                                </section>
+                            {% endfor %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
     </section>
 </main>
 {% endblock %}

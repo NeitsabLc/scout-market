@@ -194,6 +194,46 @@ final class PresentationMenu
         return $resultat;
     }
 
+    /**
+     * @param list<Menu> $menus
+     *
+     * @return list<array{
+     *     id: string,
+     *     label: string,
+     *     distribution: string,
+     *     menus: list<array{libelle: string, code: string, nom: ?string, elements: list<string>, recettes: list<string>, supplementaires: list<string>}>
+     * }>
+     */
+    public function resumesMenusParGrille(array $menus): array
+    {
+        $resultat = [];
+        $indexParGrille = [];
+
+        foreach ($menus as $menu) {
+            $grille = $menu->getGrilleMenu();
+            if (null === $grille) {
+                continue;
+            }
+
+            $id = (string) $grille->getId();
+            if (!isset($indexParGrille[$id])) {
+                $indexParGrille[$id] = count($resultat);
+                $resultat[] = [
+                    'id' => $id,
+                    'label' => $grille->getLabel(),
+                    'distribution' => $grille->getTypeDistribution()->libelle(),
+                    'menus' => [],
+                ];
+            }
+
+            $resume = $this->resumesMenus([$menu])[0];
+            $resume['code'] = $menu->getTypeRepas()?->getCode() ?? '';
+            $resultat[$indexParGrille[$id]]['menus'][] = $resume;
+        }
+
+        return $resultat;
+    }
+
     /** @return list<\DateTimeImmutable> */
     public function jours(GrilleMenu $grille): array
     {
