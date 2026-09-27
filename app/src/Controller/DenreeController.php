@@ -278,6 +278,22 @@ final class DenreeController extends AbstractController
                     continue;
                 }
                 $fournisseursSelectionnes[$fournisseurId] = true;
+                $referenceCourante = null;
+                $referenceId = (string) ($ligne['id'] ?? '');
+                if (Uuid::isValid($referenceId)) {
+                    $referenceCandidate = $references->find($referenceId);
+                    if ($referenceCandidate instanceof ReferenceFournisseur && $referenceCandidate->getDenree() === $denree) {
+                        $referenceCourante = $referenceCandidate;
+                    }
+                }
+                if ('' !== $reference) {
+                    $referenceEnConflit = $references->findAutreAvecCode($fournisseur, $reference, $referenceCourante);
+                    if (null !== $referenceEnConflit) {
+                        $message = sprintf('La référence fournisseur « %s » est déjà utilisée par la denrée « %s ».', $reference, $referenceEnConflit->getDenree()->getNom());
+                        $erreurs[] = $message;
+                        $donnees['fournisseurs'][$index]['erreur_reference'] = $message;
+                    }
+                }
                 if ([] === $niveaux) {
                     $erreurs[] = sprintf('Ajoutez au moins un niveau de conditionnement au fournisseur %s.', $fournisseur->getNom());
                     continue;
@@ -313,54 +329,58 @@ final class DenreeController extends AbstractController
 
             if ([] === $erreurs && null !== $uniteTerminale && null !== $uniteInventaire && null !== $type) {
                 $denree->setNom($donnees['nom'])->setType($type)->setUniteReference($uniteTerminale)->setUniteInventaire($uniteInventaire);
-                if ($creation) {
-                    $em->persist($denree);
-                }
-                $existantes = [];
-                foreach ($references->findPourDenree($denree) as $referenceExistante) {
-                    // Une référence liée à un fournisseur désactivé reste intacte :
-                    // elle n'est plus proposée dans le formulaire mais conserve ses conditionnements.
-                    if ($referenceExistante->getFournisseur()->isActif()) {
-                        $existantes[(string) $referenceExistante->getId()] = $referenceExistante;
+                $em->wrapInTransaction(function (EntityManagerInterface $em) use ($conditionnements, $creation, $denree, $fournisseursValides, $references, $unites): void {
+                    if ($creation) {
+                        $em->persist($denree);
                     }
-                }
-                foreach ($fournisseursValides as [$ligne, $fournisseur, $referenceTexte, $niveaux, $principal]) {
-                    $id = (string) ($ligne['id'] ?? '');
-                    $referenceNormalisee = '' === $referenceTexte ? null : $referenceTexte;
-                    $reference = $existantes[$id] ?? new ReferenceFournisseur($fournisseur, $denree, $referenceNormalisee);
-                    unset($existantes[$id]);
-                    $reference->setFournisseur($fournisseur)->setReference($referenceNormalisee)->setPrincipal($principal)->setActif(true);
-                    $em->persist($reference);
-                    $niveauxExistants = [];
-                    foreach ($conditionnements->findPourReference($reference) as $niveauExistant) {
-                        $niveauxExistants[(string) $niveauExistant->getId()] = $niveauExistant;
+                    $existantes = [];
+                    foreach ($references->findPourDenree($denree) as $referenceExistante) {
+                        // Une référence liée à un fournisseur désactivé reste intacte :
+                        // elle n'est plus proposée dans le formulaire mais conserve ses conditionnements.
+                        if ($referenceExistante->getFournisseur()->isActif()) {
+                            $existantes[(string) $referenceExistante->getId()] = $referenceExistante;
+                        }
                     }
-                    foreach (array_values($niveaux) as $ordre => $niveau) {
-                        $niveauId = (string) ($niveau['id'] ?? '');
-                        $dernier = $ordre === count($niveaux) - 1;
-                        $typeConditionnement = $unites->find((string) $niveau['conditionnement']);
-                        $typeContenu = $dernier ? null : $unites->find((string) $niveaux[$ordre + 1]['conditionnement']);
-                        $libelleContenu = $typeContenu?->getNom();
-                        $quantite = $dernier ? '1' : str_replace(',', '.', (string) $niveau['quantite']);
-                        $uniteContenu = $dernier ? $typeConditionnement : null;
-                        $conditionnement = $niveauxExistants[$niveauId] ?? new ReferenceFournisseurConditionnement($reference, $ordre + 1, $typeConditionnement->getNom(), $quantite, $uniteContenu, $libelleContenu, $typeConditionnement);
-                        unset($niveauxExistants[$niveauId]);
-                        $conditionnement->setOrdre($ordre + 1)->setConditionnement($typeConditionnement)->setQuantiteContenu($quantite)->setUniteContenu($uniteContenu)->setLibelleContenu($libelleContenu);
-                        $em->persist($conditionnement);
+                    foreach ($fournisseursValides as [$ligne, $fournisseur, $referenceTexte, $niveaux, $principal]) {
+                        $id = (string) ($ligne['id'] ?? '');
+                        $referenceNormalisee = '' === $referenceTexte ? null : $referenceTexte;
+                        $reference = $existantes[$id] ?? new ReferenceFournisseur($fournisseur, $denree, $referenceNormalisee);
+                        unset($existantes[$id]);
+                        $reference->setFournisseur($fournisseur)->setReference($referenceNormalisee)->setPrincipal($principal)->setActif(true);
+                        $em->persist($reference);
+                        $niveauxExistants = [];
+                        foreach ($conditionnements->findPourReference($reference) as $niveauExistant) {
+                            $niveauxExistants[(string) $niveauExistant->getId()] = $niveauExistant;
+                        }
+                        if ([] !== $niveauxExistants) {
+                            $this->decalerOrdresConditionnements(array_values($niveauxExistants), $em);
+                        }
+                        foreach (array_values($niveaux) as $ordre => $niveau) {
+                            $niveauId = (string) ($niveau['id'] ?? '');
+                            $dernier = $ordre === count($niveaux) - 1;
+                            $typeConditionnement = $unites->find((string) $niveau['conditionnement']);
+                            $typeContenu = $dernier ? null : $unites->find((string) $niveaux[$ordre + 1]['conditionnement']);
+                            $libelleContenu = $typeContenu?->getNom();
+                            $quantite = $dernier ? '1' : str_replace(',', '.', (string) $niveau['quantite']);
+                            $uniteContenu = $dernier ? $typeConditionnement : null;
+                            $conditionnement = $niveauxExistants[$niveauId] ?? new ReferenceFournisseurConditionnement($reference, $ordre + 1, $typeConditionnement->getNom(), $quantite, $uniteContenu, $libelleContenu, $typeConditionnement);
+                            unset($niveauxExistants[$niveauId]);
+                            $conditionnement->setOrdre($ordre + 1)->setConditionnement($typeConditionnement)->setQuantiteContenu($quantite)->setUniteContenu($uniteContenu)->setLibelleContenu($libelleContenu);
+                            $em->persist($conditionnement);
+                        }
+                        foreach ($niveauxExistants as $niveauExistant) {
+                            $em->remove($niveauExistant);
+                        }
                     }
-                    foreach ($niveauxExistants as $niveauExistant) {
-                        $em->remove($niveauExistant);
+                    foreach ($existantes as $referenceExistante) {
+                        $referenceExistante->setPrincipal(false)->setActif(false);
                     }
-                }
-                foreach ($existantes as $referenceExistante) {
-                    $referenceExistante->setPrincipal(false)->setActif(false);
-                }
-                foreach ($references->findPourDenree($denree) as $referenceExistante) {
-                    if (!$referenceExistante->getFournisseur()->isActif()) {
-                        $referenceExistante->setPrincipal(false);
+                    foreach ($references->findPourDenree($denree) as $referenceExistante) {
+                        if (!$referenceExistante->getFournisseur()->isActif()) {
+                            $referenceExistante->setPrincipal(false);
+                        }
                     }
-                }
-                $em->flush();
+                });
                 $this->addFlash('success', sprintf('La denrée « %s » a bien été %s.', $denree->getNom(), $creation ? 'créée' : 'modifiée'));
 
                 return $this->redirectToRoute('app_denrees');
@@ -377,8 +397,36 @@ final class DenreeController extends AbstractController
         }
 
         $response = [] === $erreurs ? null : new Response(status: Response::HTTP_UNPROCESSABLE_ENTITY);
+        $catalogueReferences = array_map(static fn (ReferenceFournisseur $reference): array => [
+            'id' => (string) $reference->getId(),
+            'fournisseur' => (string) $reference->getFournisseur()->getId(),
+            'code' => $reference->getReference(),
+            'denree' => $reference->getDenree()->getNom(),
+        ], $references->findAvecCode());
 
-        return $this->render('denree/form.html.twig', ['denree' => $denree, 'creation' => $creation, 'donnees' => $donnees, 'erreurs' => $erreurs, 'erreurs_unite_inventaire' => $erreursUniteInventaire, 'types_denree' => TypeDenree::choix(), 'conditionnements' => array_filter($unites->findActifs(), static fn ($u) => $u->isUtilisableConditionnement()), 'fournisseurs' => $fournisseurs->findActifs(), 'references_archivees' => $referencesArchivees], $response);
+        return $this->render('denree/form.html.twig', ['denree' => $denree, 'creation' => $creation, 'donnees' => $donnees, 'erreurs' => $erreurs, 'erreurs_unite_inventaire' => $erreursUniteInventaire, 'types_denree' => TypeDenree::choix(), 'conditionnements' => array_filter($unites->findActifs(), static fn ($u) => $u->isUtilisableConditionnement()), 'fournisseurs' => $fournisseurs->findActifs(), 'references_archivees' => $referencesArchivees, 'catalogue_references' => $catalogueReferences], $response);
+    }
+
+    /** @param list<ReferenceFournisseurConditionnement> $niveaux */
+    private function decalerOrdresConditionnements(array $niveaux, EntityManagerInterface $em): void
+    {
+        $ordresOccupes = [];
+        foreach ($niveaux as $niveau) {
+            $ordresOccupes[$niveau->getOrdre()] = true;
+        }
+        $ordreTemporaire = 32767;
+        foreach ($niveaux as $niveau) {
+            while (isset($ordresOccupes[$ordreTemporaire])) {
+                --$ordreTemporaire;
+            }
+            if ($ordreTemporaire <= 0) {
+                throw new \LogicException('Impossible de réordonner les conditionnements.');
+            }
+            $niveau->setOrdre($ordreTemporaire);
+            $ordresOccupes[$ordreTemporaire] = true;
+            --$ordreTemporaire;
+        }
+        $em->flush();
     }
 
     /** @return array<string, mixed> */
