@@ -34,21 +34,45 @@ use Symfony\Component\Uid\Uuid;
 final class DenreeController extends AbstractController
 {
     #[Route('/denrees', name: 'app_denrees', methods: ['GET'])]
-    public function index(Request $request, DenreeRepository $denrees, ConversionConditionnement $conversion, CalculStockDynamique $calculStock): Response
+    public function index(Request $request, DenreeRepository $denrees, ReferenceFournisseurRepository $references, ConversionConditionnement $conversion, CalculStockDynamique $calculStock): Response
     {
         $actives = !$request->query->getBoolean('desactivees');
-        $tri = in_array($request->query->getString('tri'), ['nom', 'stock'], true)
+        $tri = in_array($request->query->getString('tri'), ['nom', 'type', 'stock'], true)
             ? $request->query->getString('tri')
             : 'nom';
         $ordre = 'desc' === mb_strtolower($request->query->getString('ordre')) ? 'desc' : 'asc';
 
         $denreesGestion = $denrees->findPourGestion($actives);
+        $referencesParDenree = [];
+        foreach ($references->findActifsPourDenrees($denreesGestion) as $reference) {
+            if (null === $reference->getReference()) {
+                continue;
+            }
+            $referencesParDenree[(string) $reference->getDenree()->getId()][] = $reference;
+        }
+        foreach ($referencesParDenree as &$referencesDenree) {
+            usort($referencesDenree, static function (ReferenceFournisseur $a, ReferenceFournisseur $b): int {
+                $comparaison = $b->isPrincipal() <=> $a->isPrincipal();
+
+                return 0 !== $comparaison
+                    ? $comparaison
+                    : strnatcasecmp($a->getFournisseur()->getNom(), $b->getFournisseur()->getNom());
+            });
+        }
+        unset($referencesDenree);
+
         $stocks = $calculStock->pourDenrees($denreesGestion);
-        $lignes = array_map(static function (Denree $denree) use ($stocks, $conversion): array {
+        $lignes = array_map(static function (Denree $denree) use ($stocks, $referencesParDenree, $conversion): array {
             $stock = $stocks[(string) $denree->getId()] ?? ['entrees' => 0.0, 'sorties' => 0.0];
+            $referencesDenree = $referencesParDenree[(string) $denree->getId()] ?? [];
 
             return [
                 'denree' => $denree,
+                'references' => $referencesDenree,
+                'recherche' => implode(' ', array_merge(
+                    [$denree->getNom(), $denree->getType()->libelle()],
+                    array_map(static fn (ReferenceFournisseur $reference): string => $reference->getReference() ?? '', $referencesDenree),
+                )),
                 'stockInventaire' => $conversion->stockDepuisQuantitesInventaire(
                     $stock['entrees'],
                     $stock['sorties'],
@@ -56,11 +80,13 @@ final class DenreeController extends AbstractController
             ];
         }, $denreesGestion);
         usort($lignes, static function (array $a, array $b) use ($tri, $ordre): int {
-            $comparaison = 'stock' === $tri
-                ? $a['stockInventaire'] <=> $b['stockInventaire']
-                : strnatcasecmp($a['denree']->getNom(), $b['denree']->getNom());
+            $comparaison = match ($tri) {
+                'stock' => $a['stockInventaire'] <=> $b['stockInventaire'],
+                'type' => strnatcasecmp($a['denree']->getType()->libelle(), $b['denree']->getType()->libelle()),
+                default => strnatcasecmp($a['denree']->getNom(), $b['denree']->getNom()),
+            };
 
-            if (0 === $comparaison && 'stock' === $tri) {
+            if (0 === $comparaison && 'nom' !== $tri) {
                 $comparaison = strnatcasecmp($a['denree']->getNom(), $b['denree']->getNom());
             }
 
