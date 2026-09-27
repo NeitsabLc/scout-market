@@ -13,9 +13,11 @@ use App\Repository\ReferenceFournisseurRepository;
 use App\Service\CalculCommande;
 use App\Service\CalculCommandeFinale;
 use App\Service\CalculStockDynamique;
+use App\Service\ExportCommandeExcel;
 use App\Service\RegroupementCommandeFournisseur;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -36,6 +38,7 @@ final class CommandeController extends AbstractController
         CalculCommandeFinale $calculFinal,
         CalculStockDynamique $calculStock,
         RegroupementCommandeFournisseur $regroupementFournisseur,
+        ExportCommandeExcel $exportExcel,
         ClockInterface $clock,
     ): Response {
         $groupesActifs = $groupes->findActifs();
@@ -116,6 +119,18 @@ final class CommandeController extends AbstractController
                         $commandeFinale,
                     )),
                 );
+
+                if ($request->query->getBoolean('exporter') && [] !== $commandeFinaleParFournisseur) {
+                    $dateDebut = $commandesCalculables[$indexDebut]['menu']->getDateMenu()?->format('Y-m-d');
+                    $dateFin = $commandesCalculables[$indexFin]['menu']->getDateMenu()?->format('Y-m-d');
+                    $nomFichier = sprintf('commandes-%s-au-%s.zip', $dateDebut, $dateFin);
+
+                    return new Response($exportExcel->creerArchive($commandeFinaleParFournisseur), Response::HTTP_OK, [
+                        'Content-Type' => 'application/zip',
+                        'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $nomFichier),
+                        'Cache-Control' => 'private, no-store',
+                    ]);
+                }
             }
         }
 
