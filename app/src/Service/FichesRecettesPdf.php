@@ -165,9 +165,9 @@ final class FichesRecettesPdf
                 : '<div class="preparation"><h3>Préparation</h3>'.$groupe['description'].'</div>';
             $categorie = '' === $groupe['categorie']
                 ? ''
-                : '<span class="category">'.$this->e($this->categorie($groupe['categorie'])).'</span>';
+                : '<div class="category-slot"><span class="category">'.$this->e($this->categorie($groupe['categorie'])).'</span></div>';
             $elements .= sprintf(
-                '<article class="recipe-card"><header><div>%s<h2>%s</h2></div></header><table class="ingredients"><tbody>%s</tbody></table>%s</article>',
+                '<article class="recipe-card"><header class="recipe-heading">%s<div class="recipe-title"><h2>%s</h2></div></header><table class="ingredients"><tbody>%s</tbody></table>%s</article>',
                 $categorie,
                 $this->e($groupe['nom']),
                 $lignes,
@@ -363,9 +363,11 @@ h1 { margin:2px 0 2px; color:#003a5d; font-family:'Caveat Brush', cursive; font-
 .meal-header h1 { font-size:34px; }
 .recipes { width:100%%; margin-top:7mm; }
 .recipe-card { margin:0 0 5mm; padding:4mm; border:1px solid #cfdae0; border-left:5px solid #003a5d; border-radius:6px; page-break-inside:avoid; }
-.recipe-card header { margin-bottom:3mm; }
-.recipe-card h2 { display:inline; margin:0; color:#003a5d; font-family:'Caveat Brush', cursive; font-size:19px; font-weight:400; line-height:1.1; }
-.category { display:inline-block; margin-right:7px; padding:2px 6px; border-radius:9px; color:#003a5d; background:#e8f2ed; font-size:7px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; vertical-align:2px; }
+.recipe-heading { display:table; width:100%%; margin-bottom:3mm; }
+.category-slot, .recipe-title { display:table-cell; vertical-align:middle; }
+.category-slot { width:1%%; padding-right:8px; white-space:nowrap; }
+.recipe-title h2 { margin:0; color:#003a5d; font-family:'Caveat Brush', cursive; font-size:19px; font-weight:400; line-height:1.1; }
+.category { display:inline-block; padding:2px 7px; border-radius:9px; color:#003a5d; background:#e8f2ed; font-size:7px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; }
 .ingredients { width:100%%; border-collapse:collapse; table-layout:fixed; }
 .ingredients th, .ingredients td { padding:5px 6px; border-top:1px solid #e2e9ec; text-align:left; vertical-align:top; }
 .ingredients th { width:31%%; color:#003a5d; font-size:9px; }

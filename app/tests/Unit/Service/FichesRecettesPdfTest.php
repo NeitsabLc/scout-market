@@ -67,6 +67,8 @@ final class FichesRecettesPdfTest extends TestCase
         self::assertStringContainsString('Carottes rôties', $html);
         self::assertStringContainsString('120 g/pers.', $html);
         self::assertStringContainsString('<ol><li>Découper les carottes.</li><li>Faire cuire.</li></ol>', $html);
+        self::assertStringContainsString('class="recipe-heading"', $html);
+        self::assertStringContainsString('class="category-slot"', $html);
         self::assertStringContainsString('class="menu-cell"', $html);
         self::assertStringNotContainsString('repas-viande.svg', $html);
         self::assertStringContainsString('border-left:5px solid #003a5d', $html);
