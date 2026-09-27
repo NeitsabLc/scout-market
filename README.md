@@ -13,6 +13,8 @@ Scout Market est l’application de gestion quotidienne du Scout Market de Jambv
 
 L’application repose sur Symfony, PostgreSQL, Liquibase, Nginx et Docker Compose.
 
+Le dépôt de référence est [NeitsabLc/scout-market sur GitHub](https://github.com/NeitsabLc/scout-market). Les contributions passent par des pull requests ; l’ancien dépôt GitLab n’est plus la forge active. Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour le workflow de contribution et [GITHUB_SETUP.md](GITHUB_SETUP.md) pour la configuration de la forge, des releases et de GHCR.
+
 ## Fonctionnalités principales
 
 - catalogue global des fournisseurs, denrées et conditionnements ;
@@ -121,4 +123,4 @@ make production-smoke
 
 GitHub Actions exécute sur chaque pull request vers `main` la validation du titre, de Docker Compose, Composer, Liquibase et Doctrine, puis PHPStan, le style, PHPUnit, la compilation des assets, l’accessibilité, les parcours E2E, la recherche de secrets avec Trivy et Betterleaks, et l’analyse des vulnérabilités. Un smoke test vérifie également la configuration de production, les rôles PostgreSQL, la sauvegarde-restauration et le durcissement des conteneurs.
 
-Release Please maintient automatiquement une pull request de version à partir des titres Conventional Commits. Sa fusion crée le tag et la GitHub Release, puis GitHub Actions construit les cinq images GHCR, produit leur SBOM et leur provenance, les signe avec Sigstore, teste exactement leurs digests et déclenche le déploiement en recette. Une version existante peut être retestée et repromue depuis le workflow de publication des images.
+Release Please maintient automatiquement une pull request de version à partir des titres Conventional Commits. Sa fusion crée le tag et la GitHub Release, puis GitHub Actions construit les cinq images GHCR, produit leur SBOM et leur provenance, les signe avec Sigstore, teste exactement leurs digests et déclenche le déploiement en recette. Une version existante peut être retestée et repromue depuis le workflow de publication des images ; le déploiement en production reste manuel.

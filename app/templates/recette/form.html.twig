@@ -6,7 +6,22 @@
     <header class="food-form-heading"><div><h1>{{ recette.nom ?: 'Ajouter une recette' }}</h1></div></header>
     {% if erreurs %}<div class="flash flash--error" role="alert">{% for e in erreurs %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
     <form id="recipe-form" method="post"><input type="hidden" name="_token" value="{{ csrf_token('enregistrer_recette') }}">
-        <section class="food-form-card"><h2>Informations générales</h2><div class="food-general-grid recipe-name-grid"><label>Nom de la recette <b>*</b><input name="nom" required maxlength="150" value="{{ recette.nom }}"></label><label>Catégorie <b>*</b><select name="categorie" required>{% for code, libelle in {'PETIT_DEJEUNER':'Petit-déjeuner','ENTREE':'Entrée','PLAT':'Plat','FROMAGE':'Fromage','DESSERT':'Dessert','GOUTER':'Goûter'} %}<option value="{{ code }}"{{ recette.categorie == code ? ' selected' : '' }}>{{ libelle }}</option>{% endfor %}</select></label></div></section>
+        <section class="food-form-card"><h2>Informations générales</h2><div class="food-general-grid recipe-name-grid"><label>Nom de la recette <b>*</b><input name="nom" required maxlength="150" value="{{ recette.nom }}"></label><label>Catégorie <b>*</b><select name="categorie" required>{% for code, libelle in {'PETIT_DEJEUNER':'Petit-déjeuner','ENTREE':'Entrée','PLAT':'Plat','FROMAGE':'Fromage','DESSERT':'Dessert','GOUTER':'Goûter'} %}<option value="{{ code }}"{{ recette.categorie == code ? ' selected' : '' }}>{{ libelle }}</option>{% endfor %}</select></label></div>
+            <div class="recipe-description-field" data-controller="rich-text-editor">
+                <span id="recipe-description-label">Description de la recette</span>
+                <div class="rich-text-editor" data-rich-text-editor-target="rich" hidden>
+                    <div class="rich-text-editor__toolbar" role="toolbar" aria-label="Mise en forme de la description">
+                        <button type="button" data-rich-text-editor-target="button" data-action="rich-text-editor#format" data-command="bold" aria-label="Gras" aria-pressed="false" title="Gras"><strong>G</strong></button>
+                        <button type="button" data-rich-text-editor-target="button" data-action="rich-text-editor#format" data-command="italic" aria-label="Italique" aria-pressed="false" title="Italique"><em>I</em></button>
+                        <button type="button" data-rich-text-editor-target="button" data-action="rich-text-editor#format" data-command="insertUnorderedList" aria-label="Liste à puces" aria-pressed="false" title="Liste à puces">• Liste</button>
+                        <button type="button" data-rich-text-editor-target="button" data-action="rich-text-editor#format" data-command="insertOrderedList" aria-label="Liste numérotée" aria-pressed="false" title="Liste numérotée">1. Liste</button>
+                    </div>
+                    <div class="rich-text-editor__content" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="recipe-description-label" data-placeholder="Décrivez les étapes de préparation…" data-rich-text-editor-target="editor" data-action="input->rich-text-editor#sync blur->rich-text-editor#sync keyup->rich-text-editor#updateToolbar mouseup->rich-text-editor#updateToolbar">{{ description_saisie|raw }}</div>
+                </div>
+                <textarea name="description" rows="8" data-rich-text-editor-target="input">{{ description_saisie }}</textarea>
+                <small>Champ optionnel. Utilisez la barre d’outils pour structurer les étapes et les conseils de préparation.</small>
+            </div>
+        </section>
         <section class="food-form-card recipe-lines-card"><header><div><h2>Composition</h2><p>Définissez les quantités individuelles pour chaque public.</p></div></header>
             <div class="recipe-table" data-public-count="{{ publics|length }}">
                 <div class="recipe-row recipe-row--head"><span>Denrée et conditionnement</span><span>Quantités par type de public</span><span></span></div>

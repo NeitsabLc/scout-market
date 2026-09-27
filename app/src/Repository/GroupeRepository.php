@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\GrilleMenu;
 use App\Entity\Groupe;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -23,7 +24,6 @@ final class GroupeRepository extends ServiceEntityRepository
     }
 
     /** @return list<Groupe> */
-    /** @return list<Groupe> */
     public function findActifsPresents(\DateTimeImmutable $date): array
     {
         return $this->createQueryBuilder('groupe')
@@ -31,6 +31,18 @@ final class GroupeRepository extends ServiceEntityRepository
             ->andWhere('groupe.dateDebutPresence <= :date')
             ->andWhere('groupe.dateFinPresence >= :date')
             ->setParameter('date', $date)
+            ->orderBy('groupe.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Groupe> */
+    public function findActifsPourGrille(GrilleMenu $grille): array
+    {
+        return $this->createQueryBuilder('groupe')
+            ->andWhere('groupe.grilleMenu = :grille')
+            ->andWhere('groupe.actif = true')
+            ->setParameter('grille', $grille)
             ->orderBy('groupe.nom', 'ASC')
             ->getQuery()
             ->getResult();

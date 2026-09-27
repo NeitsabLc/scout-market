@@ -24,6 +24,7 @@ class Recette
     public const CATEGORIES_MENU = ['ENTREE', 'PLAT', 'FROMAGE', 'DESSERT'];
     #[ORM\Column(length: 150)] private string $nom = '';
     #[ORM\Column(length: 20)] private string $categorie = 'PLAT';
+    #[ORM\Column(type: 'text', nullable: true)] private ?string $description = null;
     /** @var Collection<int, RecetteDenree> */
     #[ORM\OneToMany(mappedBy: 'recette', targetEntity: RecetteDenree::class, cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['ordre' => 'ASC'])]
@@ -57,6 +58,19 @@ class Recette
     public function setCategorie(string $categorie): self
     {
         $this->categorie = $categorie;
+        $this->touch();
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
         $this->touch();
 
         return $this;

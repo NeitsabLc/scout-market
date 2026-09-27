@@ -16,6 +16,7 @@ use App\Enum\TypeDistributionMenu;
 use App\Repository\ConfigurationDistributionRepository;
 use App\Repository\DenreeRepository;
 use App\Repository\GrilleMenuRepository;
+use App\Repository\GroupeRepository;
 use App\Repository\MenuRepository;
 use App\Repository\PublicCibleRepository;
 use App\Repository\RecetteRepository;
@@ -23,6 +24,7 @@ use App\Repository\TypeRepasRepository;
 use App\Repository\UniteRepository;
 use App\Service\ConversionConditionnement;
 use App\Service\DuplicationGrilleMenu;
+use App\Service\FichesRecettesPdf;
 use App\Service\PreparationDistribution;
 use App\Service\PresentationMenu;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,8 +33,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Uid\Uuid;
 
 #[IsGranted(new Expression("is_granted('ROLE_GESTIONNAIRE') or is_granted('ROLE_GROUPE')"))]
@@ -182,6 +186,30 @@ final class MenuController extends AbstractController
         $grille = $grilles->findActives()[0] ?? null;
 
         return null === $grille ? $this->redirectToRoute('app_menus') : $this->redirectToRoute('app_grille_menu_speciaux', ['id' => (string) $grille->getId()]);
+    }
+
+    #[Route('/menus/grilles/{id}/fiches-recettes.pdf', name: 'app_grille_menu_fiches_recettes', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['GET'])]
+    public function fichesRecettes(string $id, GrilleMenuRepository $grilles, MenuRepository $menus, GroupeRepository $groupes, FichesRecettesPdf $pdf): Response
+    {
+        $this->denyAccessUnlessGranted(Utilisateur::ROLE_GESTIONNAIRE);
+        $grille = Uuid::isValid($id) ? $grilles->find($id) : null;
+        if (null === $grille || !$grille->isActif()) {
+            throw $this->createNotFoundException('Grille de menus introuvable.');
+        }
+
+        $nom = (new AsciiSlugger('fr'))->slug($grille->getLabel())->lower()->toString();
+        $reponse = new Response($pdf->generer(
+            $grille,
+            $menus->findStandardsPourGrille($grille),
+            $groupes->findActifsPourGrille($grille),
+        ));
+        $reponse->headers->set('Content-Type', 'application/pdf');
+        $reponse->headers->set('Content-Disposition', $reponse->headers->makeDisposition(
+            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+            sprintf('fiches-recettes-%s.pdf', '' === $nom ? 'menu' : $nom),
+        ));
+
+        return $reponse;
     }
 
     #[Route('/menus/grilles/{id}', name: 'app_grille_menu_modifier', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['GET', 'POST'])]

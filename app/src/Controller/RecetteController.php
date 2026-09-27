@@ -14,6 +14,7 @@ use App\Repository\PublicCibleRepository;
 use App\Repository\RecetteRepository;
 use App\Repository\UniteRepository;
 use App\Service\ConversionConditionnement;
+use App\Service\DescriptionRecetteSanitizer;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -70,6 +71,7 @@ final class RecetteController extends AbstractController
         PublicCibleRepository $publics,
         UniteRepository $unites,
         ConversionConditionnement $conversion,
+        DescriptionRecetteSanitizer $descriptionSanitizer,
         EntityManagerInterface $entityManager,
         ?string $id = null,
     ): Response {
@@ -81,6 +83,7 @@ final class RecetteController extends AbstractController
         $recette ??= new Recette();
         $publicsActifs = $publics->findActifs();
         $denreesActives = $denrees->findActifs();
+        $descriptionSaisie = $descriptionSanitizer->nettoyer($recette->getDescription() ?? '') ?? '';
         $erreurs = [];
 
         if ($request->isMethod('POST')) {
@@ -98,6 +101,7 @@ final class RecetteController extends AbstractController
             if (!in_array($categorie, Recette::CATEGORIES, true)) {
                 $erreurs[] = 'La catégorie est obligatoire.';
             }
+            $descriptionSaisie = $descriptionSanitizer->nettoyer($request->request->getString('description')) ?? '';
 
             $composition = [];
             foreach (array_values($request->request->all('lignes')) as $index => $donnees) {
@@ -138,7 +142,10 @@ final class RecetteController extends AbstractController
                 $erreurs[] = 'Ajoutez au moins une denrée.';
             }
             if ([] === $erreurs) {
-                $recette->setNom($nom)->setCategorie($categorie);
+                $recette
+                    ->setNom($nom)
+                    ->setCategorie($categorie)
+                    ->setDescription('' === $descriptionSaisie ? null : $descriptionSaisie);
                 foreach ($recette->getDenrees()->toArray() as $ancienne) {
                     $recette->removeDenree($ancienne);
                 }
@@ -185,6 +192,7 @@ final class RecetteController extends AbstractController
             'catalogue' => $catalogue,
             'regimes' => RegimeAlimentaire::choix(),
             'erreurs' => $erreurs,
+            'description_saisie' => $descriptionSaisie,
         ], $response);
     }
 }
