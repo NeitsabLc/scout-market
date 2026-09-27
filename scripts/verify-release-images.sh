@@ -3,46 +3,64 @@
 set -eu
 
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck source=registry-helpers.sh
 . "$script_dir/registry-helpers.sh"
 
 : "${SCOUT_RELEASE_GIT_SHA:?SCOUT_RELEASE_GIT_SHA doit etre renseigne}"
 
 for commande in docker cosign; do
-    command -v "$commande" >/dev/null 2>&1 || {
-        echo "Commande requise absente : $commande" >&2
+    if ! command -v "$commande" >/dev/null 2>&1; then
+        echo "Commande requise absente : ${commande}" >&2
         exit 1
-    }
+    fi
 done
 
-depot=neitsablc/scout-market
-identite="^https://gitlab[.]com/${depot}//[.]gitlab-ci[.]yml@refs/tags/v[0-9]+[.][0-9]+[.][0-9]+$"
-emetteur=https://gitlab.com
+depot=NeitsabLc/scout-market
+identite="^https://github[.]com/${depot}/[.]github/workflows/publish-images[.]yaml@refs/(heads/main|tags/v[0-9]+[.][0-9]+[.][0-9]+)$"
+emetteur="https://token.actions.githubusercontent.com"
 
-printf '%s\n' "$SCOUT_RELEASE_GIT_SHA" | grep -Eq '^[0-9a-f]{40}$' || {
+if ! printf '%s\n' "$SCOUT_RELEASE_GIT_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
     echo "SHA Git de livraison invalide." >&2
     exit 1
+fi
+
+verifier_image() {
+    nom=$1
+    reference=$2
+    prefixe="ghcr.io/neitsablc/scout-market-${nom}@sha256:"
+
+    case "$reference" in
+        "$prefixe"*) ;;
+        *)
+            echo "Reference inattendue pour ${nom} : ${reference}" >&2
+            exit 1
+            ;;
+    esac
+
+    digest=${reference#*@sha256:}
+    if ! printf '%s\n' "$digest" | grep -Eq '^[0-9a-f]{64}$'; then
+        echo "Digest SHA-256 invalide pour ${nom}." >&2
+        exit 1
+    fi
+
+    echo "Verification de ${nom} (${reference})"
+    docker buildx imagetools inspect "$reference" >/dev/null
+    cosign verify "$reference" \
+        --certificate-identity-regexp "$identite" \
+        --certificate-oidc-issuer "$emetteur" \
+        --certificate-github-workflow-repository "$depot" \
+        --certificate-github-workflow-sha "$SCOUT_RELEASE_GIT_SHA" >/dev/null
 }
 
 for image in $(release_image_names); do
     variable=$(printf '%s' "$image" | tr '[:lower:]' '[:upper:]')
     variable="SCOUT_RELEASE_${variable}_IMAGE"
     eval "reference=\${${variable}:-}"
-    prefixe="registry.gitlab.com/neitsablc/scout-market/${image}@sha256:"
-    case "$reference" in
-        "$prefixe"*) ;;
-        *) echo "Reference inattendue pour $image : $reference" >&2; exit 1 ;;
-    esac
-    digest=${reference#*@sha256:}
-    printf '%s\n' "$digest" | grep -Eq '^[0-9a-f]{64}$' || {
-        echo "Digest SHA-256 invalide pour $image." >&2
+    if [ -z "$reference" ]; then
+        echo "${variable} doit etre renseignee" >&2
         exit 1
-    }
-    docker buildx imagetools inspect "$reference" >/dev/null
-    cosign verify "$reference" \
-        --certificate-identity-regexp "$identite" \
-        --certificate-oidc-issuer "$emetteur" \
-        -a "gitlab_project_path=$depot" \
-        -a "gitlab_commit_sha=$SCOUT_RELEASE_GIT_SHA" >/dev/null
- done
+    fi
+    verifier_image "$image" "$reference"
+done
 
-echo "Les cinq images et leurs signatures Sigstore GitLab sont valides."
+echo "Les cinq images et leurs signatures Sigstore sont valides."

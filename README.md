@@ -4,7 +4,7 @@
 [![Symfony 8.1](https://img.shields.io/badge/Symfony-8.1-000000?logo=symfony&logoColor=white)](https://symfony.com/)
 [![PostgreSQL 18](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![CI](https://gitlab.com/neitsablc/scout-market/badges/main/pipeline.svg)](https://gitlab.com/neitsablc/scout-market/-/pipelines)
+[![CI](https://github.com/NeitsabLc/scout-market/actions/workflows/ci.yaml/badge.svg)](https://github.com/NeitsabLc/scout-market/actions/workflows/ci.yaml)
 [![Licence Apache 2.0](https://img.shields.io/badge/Licence-Apache%202.0-D22128?logo=apache&logoColor=white)](LICENSE)
 
 ## Description
@@ -37,7 +37,7 @@ PHP, Composer, PostgreSQL, Liquibase et Nginx sont fournis par les conteneurs.
 ### Installation
 
 ```bash
-git clone https://gitlab.com/neitsablc/scout-market.git
+git clone https://github.com/NeitsabLc/scout-market.git
 cd scout-market
 cp .env.example .env
 cp app/.env.example app/.env
@@ -76,8 +76,8 @@ La procédure générale consiste à :
 
 1. préparer un serveur Linux avec Docker Compose, un nom de domaine, TLS et un stockage persistant pour PostgreSQL et les sauvegardes ;
 2. récupérer une version publiée et copier `.env.release.example` vers `.env.release` ;
-3. injecter les secrets hors de Git et renseigner les images du registre GitLab par digest ;
-4. s’authentifier auprès du registre GitLab si nécessaire, puis vérifier les signatures et télécharger les images ;
+3. injecter les secrets hors de Git et renseigner les images GHCR par digest ;
+4. s’authentifier auprès de GHCR si nécessaire, puis vérifier les signatures et télécharger les images ;
 5. réaliser une sauvegarde chiffrée avant toute migration ;
 6. contrôler puis appliquer les changesets Liquibase ;
 7. démarrer les services, exécuter la maintenance et vérifier l’état, les journaux et le parcours de connexion ;
@@ -119,6 +119,6 @@ make production-smoke
 
 `make test` recrée la base PostgreSQL isolée `scout_market_test`, applique les migrations et exécute PHPUnit. Les suites navigateur utilisent Playwright et Axe pour les parcours fonctionnels et l’accessibilité.
 
-GitLab CI/CD exécute sur chaque merge request vers `main` la validation du titre, de Docker Compose, Composer, Liquibase et Doctrine, puis PHPStan, le style, PHPUnit, la compilation des assets, l’accessibilité, les parcours E2E, la recherche de secrets et l’analyse des vulnérabilités. Un smoke test vérifie également la configuration de production, les rôles PostgreSQL, la sauvegarde-restauration et le durcissement des conteneurs. Les releases publient des images du registre GitLab signées, accompagnées d’un SBOM et d’une provenance.
+GitHub Actions exécute sur chaque pull request vers `main` la validation du titre, de Docker Compose, Composer, Liquibase et Doctrine, puis PHPStan, le style, PHPUnit, la compilation des assets, l’accessibilité, les parcours E2E, la recherche de secrets avec Trivy et Betterleaks, et l’analyse des vulnérabilités. Un smoke test vérifie également la configuration de production, les rôles PostgreSQL, la sauvegarde-restauration et le durcissement des conteneurs.
 
-La préparation d’une release est volontairement manuelle : lancer un pipeline GitLab sur `main`, puis démarrer le job `prepare-release-mr`. Il regroupe les changements applicatifs depuis le dernier tag dans une unique MR et calcule la prochaine version à partir des titres Conventional Commits. Les commits purement CI (`ci:`, `fix(ci):`, etc.) sont ignorés. La fusion de cette MR crée automatiquement le tag, la release, les images signées et le déploiement en recette ; le déploiement en production reste manuel.
+Release Please maintient automatiquement une pull request de version à partir des titres Conventional Commits. Sa fusion crée le tag et la GitHub Release, puis GitHub Actions construit les cinq images GHCR, produit leur SBOM et leur provenance, les signe avec Sigstore, teste exactement leurs digests et déclenche le déploiement en recette. Une version existante peut être retestée et repromue depuis le workflow de publication des images.

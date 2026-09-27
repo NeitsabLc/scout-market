@@ -2,9 +2,7 @@
 
 set -eu
 
-ci_env_file=${CI_ENV_FILE:-.ci.env}
-: >"$ci_env_file"
-chmod 0600 "$ci_env_file"
+: "${GITHUB_ENV:?GITHUB_ENV doit etre renseigne par GitHub Actions}"
 
 cp .env.example .env
 cp app/.env.example app/.env
@@ -14,17 +12,12 @@ remplacer_variable() (
     variable=${2:?La variable doit etre renseignee}
     valeur=${3-}
     fichier_temporaire=$(mktemp "${fichier}.XXXXXX")
-    sed "s/^${variable}=.*/${variable}=${valeur}/" "$fichier" >"$fichier_temporaire"
+    sed "s/^${variable}=.*/${variable}=${valeur}/" "$fichier" > "$fichier_temporaire"
     mv "$fichier_temporaire" "$fichier"
 )
 
-ajouter_variable() {
-    variable=$1
-    valeur=$2
-    printf '%s=%s\n' "$variable" "$valeur" >>"$ci_env_file"
-}
-
 app_secret_ci=$(openssl rand -hex 32)
+echo "::add-mask::${app_secret_ci}"
 remplacer_variable app/.env APP_ENV prod
 remplacer_variable app/.env APP_SECRET "$app_secret_ci"
 chmod 0644 app/.env
@@ -37,11 +30,11 @@ for variable in \
     POSTGRES_BACKUP_PASSWORD \
     POSTGRES_ADMIN_PASSWORD \
     POSTGRES_HEALTHCHECK_PASSWORD; do
-    ajouter_variable "$variable" "$(openssl rand -hex 24)"
+    valeur=$(openssl rand -hex 24)
+    echo "::add-mask::${valeur}"
+    echo "${variable}=${valeur}" >> "$GITHUB_ENV"
 done
 
-ajouter_variable POSTGRES_ADMIN_USER scout_market_admin
-ajouter_variable POSTGRES_HEALTHCHECK_USER scout_market_health
-ajouter_variable POSTGRES_HBA_FILE ./docker/postgres/pg_hba.prod.conf.example
-
-printf 'Configuration CI generee dans %s (valeurs masquees).\n' "$ci_env_file"
+echo "POSTGRES_ADMIN_USER=scout_market_admin" >> "$GITHUB_ENV"
+echo "POSTGRES_HEALTHCHECK_USER=scout_market_health" >> "$GITHUB_ENV"
+echo "POSTGRES_HBA_FILE=./docker/postgres/pg_hba.prod.conf.example" >> "$GITHUB_ENV"

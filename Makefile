@@ -196,7 +196,7 @@ release-db-update: release-pull ## Appliquer les migrations avec l'image livrée
 release-up: release-pull ## Démarrer exactement les services persistants vérifiés
 	$(DOCKER_COMPOSE_RELEASE) up -d --no-build --wait --wait-timeout 120 database php nginx
 
-release-ps: ## Afficher l'état des conteneurs issus des images du registre GitLab
+release-ps: ## Afficher l'état des conteneurs issus des images GHCR
 	$(DOCKER_COMPOSE_RELEASE) ps
 
 release-maintenance-now: release-pull ## Exécuter un cycle de maintenance avec l'image livrée
