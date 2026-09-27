@@ -6,12 +6,19 @@ namespace App\Tests\Functional\ScoutMarket;
 
 use App\Entity\Denree;
 use App\Entity\Fournisseur;
+use App\Entity\GrilleMenu;
+use App\Entity\Groupe;
+use App\Entity\Menu;
+use App\Entity\MenuDenree;
+use App\Entity\Recette;
+use App\Entity\RecetteDenree;
 use App\Entity\ReferenceFournisseur;
 use App\Entity\ReferenceFournisseurConditionnement;
 use App\Entity\Unite;
 use App\Entity\Utilisateur;
 use App\Enum\TypeDenree;
 use App\Repository\ReferenceFournisseurConditionnementRepository;
+use App\Repository\TypeRepasRepository;
 use App\Repository\UtilisateurRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -146,6 +153,65 @@ final class DenreeControllerTest extends WebTestCase
         }
     }
 
+    public function testLesUtilisationsDonnentAccesAuMenuDuJourEtAuxRecettes(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->administrateur());
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $jeu = $this->creerJeuDeDonnees($em);
+        $date = new \DateTimeImmutable('2027-04-12');
+        $typeRepas = static::getContainer()->get(TypeRepasRepository::class)->findOneBy(['code' => 'DEJEUNER']);
+        self::assertNotNull($typeRepas);
+
+        $recette = (new Recette())
+            ->setNom('Recette utilisant la denrée '.$jeu['suffixe'])
+            ->setCategorie('PLAT')
+            ->addDenree((new RecetteDenree())
+                ->setDenree($jeu['denree'])
+                ->setConditionnement($jeu['gramme'])
+                ->setOrdre(0));
+        $grille = new GrilleMenu('Grille utilisations '.$jeu['suffixe'], $date, $date);
+        $groupe = (new Groupe())
+            ->setGrilleMenu($grille)
+            ->setNom('Unité utilisations '.$jeu['suffixe'])
+            ->setType('farfadets')
+            ->setEffectifJeune(10)
+            ->setEffectifAdulte(2)
+            ->setDateDebutPresence($date)
+            ->setDateFinPresence($date);
+        $menu = (new Menu())
+            ->setGrilleMenu($grille)
+            ->setTypeRepas($typeRepas)
+            ->setDateMenu($date)
+            ->addDenree((new MenuDenree())
+                ->setDenree($jeu['denree'])
+                ->setConditionnement($jeu['gramme'])
+                ->setOrdre(0));
+        foreach ([$recette, $grille, $groupe, $menu] as $entite) {
+            $em->persist($entite);
+        }
+        $em->flush();
+        $jeu['recette'] = $recette;
+        $jeu['groupe'] = $groupe;
+        $jeu['grille'] = $grille;
+
+        try {
+            $client->request('GET', '/denrees/'.$jeu['denree']->getId().'/utilisations');
+
+            self::assertResponseIsSuccessful();
+            $urlMenu = sprintf('/menus/grilles/%s?date=2027-04-12&repas=%s', $grille->getId(), $typeRepas->getId());
+            self::assertSelectorTextContains('h1', 'Repas et recettes utilisant '.$jeu['denree']->getNom());
+            self::assertSelectorTextContains('.food-usages-meals h2', 'Repas utilisant '.$jeu['denree']->getNom());
+            self::assertSelectorExists(sprintf('tr[data-url="%s"]', $urlMenu));
+            self::assertSelectorExists(sprintf('a[href="%s"]', $urlMenu));
+            self::assertSelectorTextContains('.food-usages-recipes h2', 'Recettes utilisant '.$jeu['denree']->getNom());
+            self::assertSelectorExists(sprintf('.food-usages-recipes tr[data-url="/recettes/%s/modifier"]', $recette->getId()));
+            self::assertSelectorTextContains('.food-usages-recipes tbody', $recette->getNom());
+        } finally {
+            $this->supprimerJeuDeDonnees($jeu);
+        }
+    }
+
     /** @return array<string, object|string> */
     private function creerJeuDeDonnees(EntityManagerInterface $em): array
     {
@@ -176,6 +242,29 @@ final class DenreeControllerTest extends WebTestCase
     {
         $em = static::getContainer()->get(EntityManagerInterface::class);
         $em->clear();
+        $recetteTest = $jeu['recette'] ?? null;
+        if ($recetteTest instanceof Recette) {
+            $recette = $em->find(Recette::class, $recetteTest->getId());
+            if (null !== $recette) {
+                $em->remove($recette);
+            }
+        }
+        $groupeTest = $jeu['groupe'] ?? null;
+        if ($groupeTest instanceof Groupe) {
+            $groupe = $em->find(Groupe::class, $groupeTest->getId());
+            if (null !== $groupe) {
+                $em->remove($groupe);
+            }
+        }
+        $em->flush();
+        $grilleTest = $jeu['grille'] ?? null;
+        if ($grilleTest instanceof GrilleMenu) {
+            $grille = $em->find(GrilleMenu::class, $grilleTest->getId());
+            if (null !== $grille) {
+                $em->remove($grille);
+                $em->flush();
+            }
+        }
         foreach (['referenceExistante', 'reference'] as $cle) {
             if (isset($jeu[$cle]) && method_exists($jeu[$cle], 'getId')) {
                 $reference = $em->find(ReferenceFournisseur::class, $jeu[$cle]->getId());

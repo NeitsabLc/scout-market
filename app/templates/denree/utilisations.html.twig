@@ -1,19 +1,34 @@
 {% extends 'base.html.twig' %}
-{% block title %}Repas utilisant {{ denree.nom }} | Scout Market{% endblock %}
+{% block title %}Repas et recettes utilisant {{ denree.nom }} | Scout Market{% endblock %}
 {% block body %}
 <main class="food-usages-page entity-list-page">
     <nav class="food-breadcrumb"><a href="{{ path('app_denrees') }}">Denrées</a><span>/</span><span>{{ denree.nom }}</span></nav>
-    <header class="stock-list-heading entity-list-heading"><div><h1>Repas utilisant {{ denree.nom }}</h1><p>Quantités totales nécessaires selon les unités présentes et leur menu</p></div></header>
-    <section class="stock-list-card">
+    <header class="stock-list-heading entity-list-heading"><div><h1>Repas et recettes utilisant {{ denree.nom }}</h1><p>Retrouvez les repas et les recettes faisant appel à cette denrée</p></div></header>
+    <section class="stock-list-card food-usages-card food-usages-meals">
+        <header class="food-usages-section-heading"><div><h2>Repas utilisant {{ denree.nom }}</h2><p>Quantités totales nécessaires selon les unités présentes et leur menu</p></div><span>{{ utilisations|length }} repas</span></header>
         {% if utilisations is empty %}<div class="stocks-empty"><strong>Aucun repas trouvé</strong><p>Cette denrée n’est nécessaire dans aucun repas pour les unités présentes.</p></div>
         {% else %}<div class="food-usages-table">
             <table>
                 <thead><tr><th scope="col">Jour</th><th scope="col">Repas</th><th scope="col">Menu</th><th scope="col">Quantité totale nécessaire</th></tr></thead>
-                <tbody>{% for utilisation in utilisations %}<tr>
+                <tbody>{% for utilisation in utilisations %}{% set menuUrl = path('app_grille_menu_modifier', {id: utilisation.grille.id, date: utilisation.menu.dateMenu|date('Y-m-d'), repas: utilisation.menu.typeRepas.id}) %}<tr class="clickable-row" role="link" tabindex="0" data-controller="clickable-row" data-url="{{ menuUrl }}" data-action="click->clickable-row#open keydown->clickable-row#open">
                     <td><time datetime="{{ utilisation.menu.dateMenu|date('Y-m-d') }}">{{ utilisation.menu.dateMenu|date('d/m/Y') }}</time></td>
                     <th scope="row">{{ utilisation.menu.libelle }}</th>
-                    <td>{{ utilisation.grille.label }}</td>
+                    <td><a class="food-usages-link" href="{{ menuUrl }}">{{ utilisation.grille.label }}</a></td>
                     <td class="order-total">{% for total in utilisation.quantites %}{% if not loop.first %}<span aria-hidden="true"> + </span>{% endif %}<strong>{{ total.quantite|quantite }}</strong> {{ total.unite.symbole }}{% endfor %}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>{% endif %}
+    </section>
+    <section class="stock-list-card food-usages-card food-usages-recipes">
+        <header class="food-usages-section-heading"><div><h2>Recettes utilisant {{ denree.nom }}</h2><p>Recettes dont la composition contient cette denrée</p></div><span>{{ recettes|length }} recette{{ recettes|length > 1 ? 's' : '' }}</span></header>
+        {% if recettes is empty %}<div class="stocks-empty"><strong>Aucune recette trouvée</strong><p>Cette denrée n’est utilisée dans aucune recette.</p></div>
+        {% else %}<div class="food-usages-table">
+            <table>
+                <thead><tr><th scope="col">Recette</th><th scope="col">Catégorie</th><th scope="col">Statut</th></tr></thead>
+                <tbody>{% for recette in recettes %}{% set recetteUrl = path('app_recette_modifier', {id: recette.id}) %}<tr class="clickable-row" role="link" tabindex="0" data-controller="clickable-row" data-url="{{ recetteUrl }}" data-action="click->clickable-row#open keydown->clickable-row#open">
+                    <th scope="row"><a class="food-usages-link" href="{{ recetteUrl }}">{{ recette.nom }}</a></th>
+                    <td>{{ {'PETIT_DEJEUNER':'Petit-déjeuner','ENTREE':'Entrée','PLAT':'Plat','FROMAGE':'Fromage','DESSERT':'Dessert','GOUTER':'Goûter'}[recette.categorie] }}</td>
+                    <td><span class="status-pill status-pill--{{ recette.actif ? 'active' : 'inactive' }}">{{ recette.actif ? 'Active' : 'Désactivée' }}</span></td>
                 </tr>{% endfor %}</tbody>
             </table>
         </div>{% endif %}

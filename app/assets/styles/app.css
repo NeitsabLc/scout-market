@@ -1770,6 +1770,16 @@ select {
 .food-usages-table thead th{color:var(--text-muted);font-size:.8rem;font-weight:700}
 .food-usages-table tbody th{color:var(--sgdf-blue)}
 .food-usages-table tbody tr:last-child th,.food-usages-table tbody tr:last-child td{border-bottom:0}
+.food-usages-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:.85rem 1.5rem;padding:1.35rem 1.25rem;border-bottom:1px solid var(--border)}
+.food-usages-section-heading>div{min-width:0}
+.food-usages-section-heading h2{margin:0;font-family:var(--font-title);font-size:1.45rem}
+.food-usages-section-heading p{margin:.45rem 0 0;color:var(--text-muted);line-height:1.45}
+.food-usages-section-heading>span{align-self:center;flex:0 0 auto;color:var(--text-muted);font-size:.85rem;font-weight:700;white-space:nowrap}
+.food-usages-card>.food-usages-table{border-top:0}
+.food-usages-link{color:inherit;font-weight:700;text-decoration:none}
+.food-usages-link:hover,.food-usages-link:focus-visible{text-decoration:underline}
+.food-usages-table tbody tr.clickable-row{transition:background-color 150ms ease}
+@media(max-width:48rem){.food-usages-section-heading{flex-wrap:wrap;padding-inline:clamp(1.25rem,4vw,3.5rem)}.food-usages-section-heading>span{width:100%;margin-top:.15rem}}
 .order-calculation-note{margin:-.5rem 0 1.5rem;padding:.9rem 1rem;border-left:.25rem solid var(--sgdf-mint);color:var(--text-muted);background:white}.orders-list{display:grid;gap:1.5rem}
 .order-meal-card{overflow:hidden;border-top:.35rem solid var(--sgdf-mint);border-radius:.45rem;background:white;box-shadow:0 8px 28px rgb(0 58 93 / 9%)}
 .order-meal-card>summary{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.15rem 1.25rem;cursor:pointer;list-style:none}
