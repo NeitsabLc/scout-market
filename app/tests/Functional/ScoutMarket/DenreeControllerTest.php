@@ -110,6 +110,42 @@ final class DenreeControllerTest extends WebTestCase
         }
     }
 
+    public function testLaListeAfficheLeTypeEtLaReferenceEtPermetDeTrierParType(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->administrateur());
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        $jeu = $this->creerJeuDeDonnees($em);
+        $denreeFraiche = (new Denree())
+            ->setNom('Aliment frais '.$jeu['suffixe'])
+            ->setType(TypeDenree::FRAIS)
+            ->setUniteReference($jeu['gramme'])
+            ->setUniteInventaire($jeu['kilogramme']);
+        $em->persist($denreeFraiche);
+        $em->flush();
+        $jeu['denreeFraiche'] = $denreeFraiche;
+
+        try {
+            $crawler = $client->request('GET', '/denrees?tri=type&ordre=asc');
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorTextContains('.foods-row--head', 'Type');
+            self::assertSelectorTextContains('.foods-row--head', 'Référence');
+            self::assertSelectorExists('.foods-sort-link[href*="tri=type"]');
+            self::assertSelectorExists(sprintf('[data-food-catalog-target="row"][data-name*="init-%s"]', $jeu['suffixe']));
+            self::assertSelectorTextContains(sprintf('[data-name*="init-%s"] .food-reference-code', $jeu['suffixe']), 'INIT-'.$jeu['suffixe']);
+
+            $noms = $crawler->filter('.foods-swipe-row .food-name strong')->each(static fn ($noeud): string => $noeud->text());
+            $positionFrais = array_search($denreeFraiche->getNom(), $noms, true);
+            $positionSec = array_search($jeu['denree']->getNom(), $noms, true);
+            self::assertIsInt($positionFrais);
+            self::assertIsInt($positionSec);
+            self::assertLessThan($positionSec, $positionFrais);
+        } finally {
+            $this->supprimerJeuDeDonnees($jeu);
+        }
+    }
+
     /** @return array<string, object|string> */
     private function creerJeuDeDonnees(EntityManagerInterface $em): array
     {
@@ -152,7 +188,7 @@ final class DenreeControllerTest extends WebTestCase
             }
         }
         $em->flush();
-        foreach (['denreeExistante', 'denree'] as $cle) {
+        foreach (['denreeExistante', 'denreeFraiche', 'denree'] as $cle) {
             if (isset($jeu[$cle]) && method_exists($jeu[$cle], 'getId')) {
                 $entite = $em->find(Denree::class, $jeu[$cle]->getId());
                 if (null !== $entite) {
