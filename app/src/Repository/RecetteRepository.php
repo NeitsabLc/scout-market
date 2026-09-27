@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\Denree;
 use App\Entity\Recette;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -53,6 +54,20 @@ final class RecetteRepository extends ServiceEntityRepository
         }
 
         return $requete->getQuery()->getResult();
+    }
+
+    /** @return list<Recette> */
+    public function findUtilisantDenree(Denree $denree): array
+    {
+        return $this->createQueryBuilder('recette')
+            ->distinct()
+            ->join('recette.denrees', 'ligne')
+            ->andWhere('ligne.denree = :denree')
+            ->setParameter('denree', $denree)
+            ->orderBy('recette.actif', 'DESC')
+            ->addOrderBy('recette.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     public function existeAvecNom(string $nom, ?Recette $recetteExclue = null): bool

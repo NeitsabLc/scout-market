@@ -16,6 +16,7 @@ use App\Repository\GroupeRepository;
 use App\Repository\MenuRepository;
 use App\Repository\MouvementStockLigneConditionnementRepository;
 use App\Repository\MouvementStockLigneRepository;
+use App\Repository\RecetteRepository;
 use App\Repository\ReferenceFournisseurConditionnementRepository;
 use App\Repository\ReferenceFournisseurRepository;
 use App\Repository\UniteRepository;
@@ -161,6 +162,7 @@ final class DenreeController extends AbstractController
         MenuRepository $menus,
         GroupeRepository $groupes,
         GroupeRepasRepository $groupeRepas,
+        RecetteRepository $recettes,
         CalculCommande $calcul,
     ): Response {
         $denree = Uuid::isValid($id) ? $denrees->find($id) : null;
@@ -194,7 +196,7 @@ final class DenreeController extends AbstractController
                 $quantites = array_values($quantites);
                 usort($quantites, static fn (array $a, array $b): int => strnatcasecmp($a['unite']->getNom(), $b['unite']->getNom()));
                 $utilisations[] = [
-                    'menu' => $commande['menu'],
+                    'menu' => $detailGrille['menu'],
                     'grille' => $detailGrille['grille'],
                     'quantites' => $quantites,
                 ];
@@ -204,6 +206,7 @@ final class DenreeController extends AbstractController
         return $this->render('denree/utilisations.html.twig', [
             'denree' => $denree,
             'utilisations' => $utilisations,
+            'recettes' => $recettes->findUtilisantDenree($denree),
         ]);
     }
 
