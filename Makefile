@@ -12,7 +12,7 @@ TEST_DATABASE := scout_market_test
 TEST_DATABASE_URL := jdbc:postgresql://database:5432/$(TEST_DATABASE)
 
 .PHONY: help install build rebuild up down restart ps \
-	prod-config prod-build prod-up prod-ps prod-logs prod-db-bootstrap prod-db-status prod-db-update prod-create-admin \
+	prod-config prod-build prod-up prod-ps prod-logs prod-db-bootstrap prod-db-status prod-db-update \
 	logs shell console composer composer-install cache-clear assets-compile \
 	db-validate db-status db-status-dev db-sql db-sql-dev db-update db-update-dev dev-data db-history db-shell db-check-connection \
 	doctrine-validate style style-fix analyse-statique \
@@ -70,9 +70,6 @@ prod-db-status: prod-config ## Afficher les migrations de production en attente
 
 prod-db-update: prod-config ## Appliquer les migrations avec le rôle dédié
 	$(DOCKER_COMPOSE_PROD) --profile tools run --rm liquibase update
-
-prod-create-admin: ## Créer interactivement le premier administrateur : make prod-create-admin EMAIL=... PRENOM=... NOM=...
-	$(DOCKER_COMPOSE_PROD) exec php php bin/console app:utilisateur:creer-administrateur "$(EMAIL)" "$(PRENOM)" "$(NOM)" --env=prod --no-debug
 
 logs: ## Afficher les journaux : make logs SERVICE=php
 	$(DOCKER_COMPOSE) logs -f --tail=100 $(SERVICE)
