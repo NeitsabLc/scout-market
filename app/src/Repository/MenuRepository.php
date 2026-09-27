@@ -81,6 +81,18 @@ final class MenuRepository extends ServiceEntityRepository
             ->getQuery()->getResult();
     }
 
+    /** @return list<Menu> */
+    public function findStandardsPourGrille(GrilleMenu $grille): array
+    {
+        return $this->requeteComplete()
+            ->andWhere('menu.grilleMenu = :grille')->andWhere('menu.actif = true')
+            ->andWhere('menu.specialCode IS NULL')->andWhere('typeRepas.actif = true')
+            ->setParameter('grille', $grille)
+            ->orderBy('menu.dateMenu', 'ASC')->addOrderBy('typeRepas.ordre', 'ASC')
+            ->addOrderBy('menuDenree.ordre', 'ASC')
+            ->getQuery()->getResult();
+    }
+
     private function requeteComplete(): QueryBuilder
     {
         return $this->createQueryBuilder('menu')
