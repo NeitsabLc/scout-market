@@ -22,14 +22,6 @@ final class FichesRecettesPdf
         'DINER' => '#88bd24',
     ];
 
-    /** @var array<string, string> */
-    private const FONDS_REPAS = [
-        'PETIT_DEJEUNER' => '#fff5dc',
-        'DEJEUNER' => '#fcebee',
-        'GOUTER' => '#e8f6fb',
-        'DINER' => '#f0f6df',
-    ];
-
     public function __construct(
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
@@ -115,7 +107,6 @@ final class FichesRecettesPdf
         foreach ($repas as $typeRepas) {
             $code = $typeRepas->getCode();
             $couleur = self::COULEURS_REPAS[$code] ?? '#6cbda4';
-            $fond = self::FONDS_REPAS[$code] ?? '#e8f2ed';
             $cellules = sprintf('<th class="meal-label" style="border-left-color:%s">%s</th>', $couleur, $this->e($typeRepas->getLibelle()));
             foreach ($jours as $jour) {
                 $menu = $menusParCase[$jour->format('Y-m-d')][$code] ?? null;
@@ -127,7 +118,11 @@ final class FichesRecettesPdf
                     fn (string $element): string => '<li>'.$this->e($element).'</li>',
                     $this->elementsMenu($menu),
                 );
-                $cellules .= sprintf('<td style="background:%s"><ul>%s</ul></td>', $fond, implode('', $elements));
+                $cellules .= sprintf(
+                    '<td class="menu-cell">%s<ul>%s</ul></td>',
+                    $this->pictoRepas($code),
+                    implode('', $elements),
+                );
             }
             $lignes .= '<tr>'.$cellules.'</tr>';
         }
@@ -296,6 +291,26 @@ final class FichesRecettesPdf
             : '<img class="logo" src="file://'.str_replace(' ', '%20', $chemin).'" alt="Scouts et Guides de France">';
     }
 
+    private function pictoRepas(string $code): string
+    {
+        $fichier = match ($code) {
+            'PETIT_DEJEUNER' => 'repas-petit-dejeuner.svg',
+            'DEJEUNER' => 'repas-dejeuner.svg',
+            'GOUTER' => 'repas-gouter.svg',
+            'DINER' => 'repas-diner.svg',
+            default => null,
+        };
+        if (null === $fichier) {
+            return '';
+        }
+
+        $chemin = $this->projectDir.'/assets/images/'.$fichier;
+
+        return is_file($chemin)
+            ? '<img class="meal-picto" src="file://'.str_replace(' ', '%20', $chemin).'" alt="">'
+            : '';
+    }
+
     private function jour(\DateTimeImmutable $date): string
     {
         return ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][(int) $date->format('w')];
@@ -344,7 +359,9 @@ h1 { margin:2px 0 2px; color:#003a5d; font-family:'Caveat Brush', cursive; font-
 .menu-grid thead strong { font-family:'Caveat Brush', cursive; font-size:12px; font-weight:400; text-transform:capitalize; }
 .menu-grid .corner { width:58px; background:#003a5d; color:#fff; font-family:'Sarabun', sans-serif; font-size:8px; text-transform:uppercase; }
 .menu-grid .meal-label { width:58px; border-left-width:5px; background:#f4f7f8; font-size:8px; vertical-align:middle; }
-.menu-grid td { height:72px; color:#153f57; }
+.menu-grid td { height:72px; color:#153f57; background:#fff; }
+.menu-grid .menu-cell { position:relative; padding-top:7px; padding-right:18px; }
+.meal-picto { position:absolute; top:4px; right:4px; width:12px; height:12px; }
 .menu-grid td.empty { color:#a7b5bc; background:#f5f7f8; text-align:center; vertical-align:middle; }
 .menu-grid ul { margin:0; padding:0; list-style:none; }
 .menu-grid li { margin-bottom:3px; line-height:1.25; }
