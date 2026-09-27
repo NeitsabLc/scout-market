@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\GrilleMenu;
+use App\Entity\Groupe;
 use App\Entity\Menu;
 use App\Entity\MenuDenree;
 use App\Entity\MenuDenreeQuantite;
@@ -22,8 +23,11 @@ final class FichesRecettesPdf
     ) {
     }
 
-    /** @param list<Menu> $menus */
-    public function generer(GrilleMenu $grille, array $menus): string
+    /**
+     * @param list<Menu>   $menus
+     * @param list<Groupe> $groupes
+     */
+    public function generer(GrilleMenu $grille, array $menus, array $groupes = []): string
     {
         $menus = array_values(array_filter(
             $menus,
@@ -43,19 +47,22 @@ final class FichesRecettesPdf
 
         $dompdf = new Dompdf($options);
         $dompdf->setPaper('a4', 'portrait');
-        $dompdf->loadHtml($this->html($grille, $menus), 'UTF-8');
+        $dompdf->loadHtml($this->html($grille, $menus, $this->codesPublics($groupes)), 'UTF-8');
         $dompdf->render();
 
         return $dompdf->output();
     }
 
-    /** @param list<Menu> $menus */
-    private function html(GrilleMenu $grille, array $menus): string
+    /**
+     * @param list<Menu>               $menus
+     * @param array<string, true>|null $codesPublics
+     */
+    private function html(GrilleMenu $grille, array $menus, ?array $codesPublics = null): string
     {
         $nombrePages = count($menus) + 1;
         $pages = [$this->pageGrille($grille, $menus, $nombrePages)];
         foreach ($menus as $index => $menu) {
-            $pages[] = $this->pageRepas($menu, $index + 2, $nombrePages);
+            $pages[] = $this->pageRepas($menu, $index + 2, $nombrePages, $codesPublics);
         }
 
         return sprintf(
@@ -134,7 +141,8 @@ final class FichesRecettesPdf
         );
     }
 
-    private function pageRepas(Menu $menu, int $numeroPage, int $nombrePages): string
+    /** @param array<string, true>|null $codesPublics */
+    private function pageRepas(Menu $menu, int $numeroPage, int $nombrePages, ?array $codesPublics): string
     {
         $date = $menu->getDateMenu();
         $typeRepas = $menu->getTypeRepas();
@@ -143,7 +151,7 @@ final class FichesRecettesPdf
         }
 
         $elements = '';
-        foreach ($this->groupesRecette($menu) as $groupe) {
+        foreach ($this->groupesRecette($menu, $codesPublics) as $groupe) {
             $lignes = '';
             foreach ($groupe['lignes'] as $ligne) {
                 $quantites = '';
@@ -209,6 +217,8 @@ final class FichesRecettesPdf
     }
 
     /**
+     * @param array<string, true>|null $codesPublics
+     *
      * @return list<array{
      *     nom: string,
      *     categorie: string,
@@ -216,7 +226,7 @@ final class FichesRecettesPdf
      *     lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>
      * }>
      */
-    private function groupesRecette(Menu $menu): array
+    private function groupesRecette(Menu $menu, ?array $codesPublics): array
     {
         $groupes = [];
         $indexParCle = [];
@@ -234,19 +244,26 @@ final class FichesRecettesPdf
                     'lignes' => [],
                 ];
             }
-            $groupes[$indexParCle[$cle]]['lignes'][] = $this->ligne($ligne);
+            $groupes[$indexParCle[$cle]]['lignes'][] = $this->ligne($ligne, $codesPublics);
         }
 
         return $groupes;
     }
 
-    /** @return array{nom: string, quantites: list<array{public: string, valeur: string}>} */
-    private function ligne(MenuDenree $ligne): array
+    /**
+     * @param array<string, true>|null $codesPublics
+     *
+     * @return array{nom: string, quantites: list<array{public: string, valeur: string}>}
+     */
+    private function ligne(MenuDenree $ligne, ?array $codesPublics): array
     {
         $quantites = [];
         /** @var MenuDenreeQuantite $quantite */
         foreach ($ligne->getQuantites() as $quantite) {
             $public = $quantite->getPublicCible();
+            if (null !== $codesPublics && !isset($codesPublics[$public->getCode()])) {
+                continue;
+            }
             $quantites[] = [
                 'ordre' => $public->getOrdre(),
                 'public' => $public->getLibelle(),
@@ -262,6 +279,28 @@ final class FichesRecettesPdf
                 'valeur' => $quantite['valeur'],
             ], $quantites),
         ];
+    }
+
+    /**
+     * @param list<Groupe> $groupes
+     *
+     * @return array<string, true>|null
+     */
+    private function codesPublics(array $groupes): ?array
+    {
+        if ([] === $groupes) {
+            return null;
+        }
+
+        $codes = [];
+        foreach ($groupes as $groupe) {
+            $code = mb_strtoupper(str_replace('-', '_', trim($groupe->getType())));
+            if ('' !== $code) {
+                $codes[$code] = true;
+            }
+        }
+
+        return $codes;
     }
 
     private function footer(int $page, int $nombrePages): string

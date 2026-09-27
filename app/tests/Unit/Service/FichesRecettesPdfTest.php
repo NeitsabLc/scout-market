@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Service;
 
 use App\Entity\Denree;
 use App\Entity\GrilleMenu;
+use App\Entity\Groupe;
 use App\Entity\Menu;
 use App\Entity\MenuDenree;
 use App\Entity\MenuDenreeQuantite;
@@ -82,5 +83,58 @@ final class FichesRecettesPdfTest extends TestCase
         $pdf = $service->generer($grille, [$menu]);
         self::assertStringStartsWith('%PDF-', $pdf);
         self::assertGreaterThan(10_000, strlen($pdf));
+    }
+
+    public function testLesQuantitesSontFiltreesSelonLesUnitesAffectees(): void
+    {
+        $grille = new GrilleMenu('Stage test', new \DateTimeImmutable('2026-10-17'), new \DateTimeImmutable('2026-10-18'));
+        $repas = new TypeRepas('DEJEUNER', 'Déjeuner', 20);
+        $unite = new Unite('gramme', 'g');
+        $denree = (new Denree())->setNom('Pâtes')->setUniteReference($unite)->setUniteInventaire($unite);
+        $ligne = (new MenuDenree())
+            ->setDenree($denree)
+            ->setConditionnement($unite);
+        foreach ([
+            ['code' => 'LOUVETEAUX_JEANNETTES', 'libelle' => 'Louveteaux-Jeannettes', 'ordre' => 20, 'quantite' => '80.000'],
+            ['code' => 'SCOUTS_GUIDES', 'libelle' => 'Scouts-Guides', 'ordre' => 30, 'quantite' => '100.000'],
+            ['code' => 'ADULTE', 'libelle' => 'Adultes', 'ordre' => 100, 'quantite' => '120.000'],
+        ] as $donnees) {
+            $public = (new PublicCible())
+                ->setCode($donnees['code'])
+                ->setLibelle($donnees['libelle'])
+                ->setOrdre($donnees['ordre']);
+            $ligne->addQuantite((new MenuDenreeQuantite())
+                ->setPublicCible($public)
+                ->setQuantiteIndividuelle($donnees['quantite']));
+        }
+        $menu = (new Menu())
+            ->setGrilleMenu($grille)
+            ->setDateMenu(new \DateTimeImmutable('2026-10-17'))
+            ->setTypeRepas($repas)
+            ->addDenree($ligne);
+        $groupes = [
+            (new Groupe())->setType('louveteaux-jeannettes'),
+            (new Groupe())->setType('adulte'),
+        ];
+
+        $service = new FichesRecettesPdf(
+            dirname(__DIR__, 3),
+            new AffichageQuantite(),
+            new DescriptionRecetteSanitizer(),
+        );
+        $codesPublics = new \ReflectionMethod($service, 'codesPublics');
+        $html = new \ReflectionMethod($service, 'html');
+
+        $htmlFiltre = $html->invoke($service, $grille, [$menu], $codesPublics->invoke($service, $groupes));
+        self::assertIsString($htmlFiltre);
+        self::assertStringContainsString('Louveteaux-Jeannettes', $htmlFiltre);
+        self::assertStringContainsString('Adultes', $htmlFiltre);
+        self::assertStringNotContainsString('Scouts-Guides', $htmlFiltre);
+
+        $htmlSansGroupe = $html->invoke($service, $grille, [$menu], $codesPublics->invoke($service, []));
+        self::assertIsString($htmlSansGroupe);
+        self::assertStringContainsString('Louveteaux-Jeannettes', $htmlSansGroupe);
+        self::assertStringContainsString('Scouts-Guides', $htmlSansGroupe);
+        self::assertStringContainsString('Adultes', $htmlSansGroupe);
     }
 }

@@ -16,6 +16,7 @@ use App\Enum\TypeDistributionMenu;
 use App\Repository\ConfigurationDistributionRepository;
 use App\Repository\DenreeRepository;
 use App\Repository\GrilleMenuRepository;
+use App\Repository\GroupeRepository;
 use App\Repository\MenuRepository;
 use App\Repository\PublicCibleRepository;
 use App\Repository\RecetteRepository;
@@ -188,7 +189,7 @@ final class MenuController extends AbstractController
     }
 
     #[Route('/menus/grilles/{id}/fiches-recettes.pdf', name: 'app_grille_menu_fiches_recettes', requirements: ['id' => '[0-9a-fA-F-]{36}'], methods: ['GET'])]
-    public function fichesRecettes(string $id, GrilleMenuRepository $grilles, MenuRepository $menus, FichesRecettesPdf $pdf): Response
+    public function fichesRecettes(string $id, GrilleMenuRepository $grilles, MenuRepository $menus, GroupeRepository $groupes, FichesRecettesPdf $pdf): Response
     {
         $this->denyAccessUnlessGranted(Utilisateur::ROLE_GESTIONNAIRE);
         $grille = Uuid::isValid($id) ? $grilles->find($id) : null;
@@ -197,7 +198,11 @@ final class MenuController extends AbstractController
         }
 
         $nom = (new AsciiSlugger('fr'))->slug($grille->getLabel())->lower()->toString();
-        $reponse = new Response($pdf->generer($grille, $menus->findStandardsPourGrille($grille)));
+        $reponse = new Response($pdf->generer(
+            $grille,
+            $menus->findStandardsPourGrille($grille),
+            $groupes->findActifsPourGrille($grille),
+        ));
         $reponse->headers->set('Content-Type', 'application/pdf');
         $reponse->headers->set('Content-Disposition', $reponse->headers->makeDisposition(
             ResponseHeaderBag::DISPOSITION_ATTACHMENT,
