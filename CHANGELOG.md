@@ -1,5 +1,11 @@
 # Historique des versions
 
+## [1.2.1](https://gitlab.com/neitsablc/scout-market/compare/v1.2.0...v1.2.1) (2026-09-27)
+
+### Corrections
+
+* fiabiliser les conditionnements et références fournisseur ([592d507](https://gitlab.com/neitsablc/scout-market/commit/592d507afb7475d757c9fc0014a25f4968bcdc12))
+
 ## [1.2.0](https://gitlab.com/neitsablc/scout-market/compare/v1.1.0...v1.2.0) (2026-09-25)
 
 ### Fonctionnalités
