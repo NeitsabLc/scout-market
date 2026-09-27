@@ -76,6 +76,29 @@ test('les distributions Camp accompagné et Stage présentent les besoins attend
   await expect(premiereJournee.locator('.crate-menus')).not.toBeVisible();
 });
 
+test('la saisie publique filtre les repas spéciaux selon le groupe', async ({ page }) => {
+  await seConnecter(page, comptes.administrateur);
+  await page.goto('/intendance/distribution/configuration');
+  const lienPublic = await page.getByLabel('Lien public de distribution').inputValue();
+
+  await page.goto(lienPublic);
+  const repasSpeciaux = page.locator('.distribution-special-meals');
+  await expect(repasSpeciaux).toBeHidden();
+
+  const groupes = page.getByLabel('Groupe');
+  await groupes.selectOption({ index: 1 });
+  await expect(repasSpeciaux).toBeVisible();
+
+  const grilleSelectionnee = await groupes.locator('option:checked').getAttribute('data-grid-id');
+  const choixVisibles = repasSpeciaux.locator('label:visible');
+  await expect(choixVisibles).toHaveCount(3);
+  expect(await choixVisibles.evaluateAll((choix) => choix.map((choix) => choix.dataset.gridId))).toEqual([
+    grilleSelectionnee,
+    grilleSelectionnee,
+    grilleSelectionnee,
+  ]);
+});
+
 test('la commande tient compte des livraisons déjà effectuées', async ({ page }) => {
   await seConnecter(page, comptes.administrateur);
   await page.goto('/intendance/commande');

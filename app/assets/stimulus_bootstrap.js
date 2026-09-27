@@ -8,6 +8,7 @@ import StockListController from './controllers/stock_list_controller.js';
 import ClickableRowController from './controllers/clickable_row_controller.js';
 import MenuDateController from './controllers/menu_date_controller.js';
 import PasswordVisibilityController from './controllers/password_visibility_controller.js';
+import DistributionController from './controllers/distribution_controller.js';
 
 const app = startStimulusApp();
 app.register('food-catalog', FoodCatalogController);
@@ -19,5 +20,6 @@ app.register('stock-list', StockListController);
 app.register('clickable-row', ClickableRowController);
 app.register('menu-date', MenuDateController);
 app.register('password-visibility', PasswordVisibilityController);
+app.register('distribution', DistributionController);
 // register any custom, 3rd party controllers here
 // app.register('some_controller_name', SomeImportedController);

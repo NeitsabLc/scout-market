@@ -1,7 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
-    static targets = ['group', 'date', 'menu', 'menuBlock', 'regularSelectors', 'specialMeal', 'portion', 'food', 'foodCount'];
+    static targets = ['group', 'date', 'menu', 'menuBlock', 'regularSelectors', 'specialMeals', 'specialMeal', 'portion', 'food', 'foodCount'];
 
     connect() {
         this.stampBrowserTime();
@@ -141,12 +141,15 @@ export default class extends Controller {
     }
 
     filterSpecialMeals(gridId) {
+        let hasVisibleSpecialMeal = false;
         this.specialMealTargets.forEach((checkbox) => {
-            const visible = checkbox.dataset.gridId === gridId;
+            const visible = Boolean(gridId) && checkbox.dataset.gridId === gridId;
             checkbox.closest('label').hidden = !visible;
             checkbox.disabled = !visible;
             if (!visible) checkbox.checked = false;
+            hasVisibleSpecialMeal ||= visible;
         });
+        if (this.hasSpecialMealsTarget) this.specialMealsTarget.hidden = !hasVisibleSpecialMeal;
         this.refreshSpecialMeal();
     }
 
