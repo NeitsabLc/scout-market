@@ -14,14 +14,6 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final class FichesRecettesPdf
 {
-    /** @var array<string, string> */
-    private const COULEURS_REPAS = [
-        'PETIT_DEJEUNER' => '#f2b233',
-        'DEJEUNER' => '#e9526e',
-        'GOUTER' => '#009cd3',
-        'DINER' => '#88bd24',
-    ];
-
     public function __construct(
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
@@ -106,8 +98,7 @@ final class FichesRecettesPdf
         $lignes = '';
         foreach ($repas as $typeRepas) {
             $code = $typeRepas->getCode();
-            $couleur = self::COULEURS_REPAS[$code] ?? '#6cbda4';
-            $cellules = sprintf('<th class="meal-label" style="border-left-color:%s">%s</th>', $couleur, $this->e($typeRepas->getLibelle()));
+            $cellules = sprintf('<th class="meal-label">%s</th>', $this->e($typeRepas->getLibelle()));
             foreach ($jours as $jour) {
                 $menu = $menusParCase[$jour->format('Y-m-d')][$code] ?? null;
                 if (!$menu instanceof Menu) {
@@ -120,7 +111,7 @@ final class FichesRecettesPdf
                 );
                 $cellules .= sprintf(
                     '<td class="menu-cell">%s<ul>%s</ul></td>',
-                    $this->pictoRepas($code),
+                    $this->pictoViande($menu),
                     implode('', $elements),
                 );
             }
@@ -291,20 +282,21 @@ final class FichesRecettesPdf
             : '<img class="logo" src="file://'.str_replace(' ', '%20', $chemin).'" alt="Scouts et Guides de France">';
     }
 
-    private function pictoRepas(string $code): string
+    private function pictoViande(Menu $menu): string
     {
-        $fichier = match ($code) {
-            'PETIT_DEJEUNER' => 'repas-petit-dejeuner.svg',
-            'DEJEUNER' => 'repas-dejeuner.svg',
-            'GOUTER' => 'repas-gouter.svg',
-            'DINER' => 'repas-diner.svg',
-            default => null,
-        };
-        if (null === $fichier) {
+        $noms = [];
+        foreach ($menu->getDenrees() as $ligne) {
+            $noms[] = $ligne->getDenree()->getNom();
+            if (null !== $ligne->getRecette()) {
+                $noms[] = $ligne->getRecette()->getNom();
+            }
+        }
+        $texte = implode(' ', $noms);
+        if (1 !== preg_match('/\b(?:agneau|bacon|b[œo]uf|canard|carne|charcuterie|chorizo|dinde|jambon|lardons?|lapin|merguez|mortadelle|mouton|pâté|poulet|porc|rillettes|salami|saucisses?|steak|veau|viande)\b/ui', $texte)) {
             return '';
         }
 
-        $chemin = $this->projectDir.'/assets/images/'.$fichier;
+        $chemin = $this->projectDir.'/assets/images/repas-viande.svg';
 
         return is_file($chemin)
             ? '<img class="meal-picto" src="file://'.str_replace(' ', '%20', $chemin).'" alt="">'
@@ -358,7 +350,7 @@ h1 { margin:2px 0 2px; color:#003a5d; font-family:'Caveat Brush', cursive; font-
 .menu-grid thead strong, .menu-grid thead span { display:block; }
 .menu-grid thead strong { font-family:'Caveat Brush', cursive; font-size:12px; font-weight:400; text-transform:capitalize; }
 .menu-grid .corner { width:58px; background:#003a5d; color:#fff; font-family:'Sarabun', sans-serif; font-size:8px; text-transform:uppercase; }
-.menu-grid .meal-label { width:58px; border-left-width:5px; background:#f4f7f8; font-size:8px; vertical-align:middle; }
+.menu-grid .meal-label { width:58px; background:#f4f7f8; font-size:8px; vertical-align:middle; }
 .menu-grid td { height:72px; color:#153f57; background:#fff; }
 .menu-grid .menu-cell { position:relative; padding-top:7px; padding-right:18px; }
 .meal-picto { position:absolute; top:4px; right:4px; width:12px; height:12px; }

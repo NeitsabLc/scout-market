@@ -68,10 +68,14 @@ final class FichesRecettesPdfTest extends TestCase
         self::assertStringContainsString('120 g/pers.', $html);
         self::assertStringContainsString('<ol><li>Découper les carottes.</li><li>Faire cuire.</li></ol>', $html);
         self::assertStringContainsString('class="menu-cell"', $html);
-        self::assertStringContainsString('repas-dejeuner.svg', $html);
-        self::assertStringNotContainsString('background:#fcebee', $html);
+        self::assertStringNotContainsString('repas-viande.svg', $html);
         self::assertStringContainsString('border-left:5px solid #003a5d', $html);
         self::assertStringNotContainsString('class="accent-line" style=', $html);
+
+        $denree->setNom('Bœuf haché');
+        $htmlCarne = $methode->invoke($service, $grille, [$menu]);
+        self::assertIsString($htmlCarne);
+        self::assertStringContainsString('repas-viande.svg', $htmlCarne);
 
         $pdf = $service->generer($grille, [$menu]);
         self::assertStringStartsWith('%PDF-', $pdf);
