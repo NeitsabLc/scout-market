@@ -1254,6 +1254,7 @@ select {
 .menus-heading {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1.75rem;
     margin-bottom: 1.5rem;
 }
@@ -1265,8 +1266,27 @@ select {
     font-weight: 800;
 }
 
-.menus-heading__action {
+.menus-heading__actions {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
     margin-left: auto;
+}
+
+.menus-heading__actions .food-primary {
+    border-color: var(--sgdf-blue);
+    color: white;
+    background: var(--sgdf-blue);
+}
+
+.menus-heading__actions .food-primary:hover {
+    border-color: #002f4d;
+    color: white;
+    background: #002f4d;
+}
+
+.menus-heading__actions .food-secondary:hover {
+    border-color: var(--sgdf-blue);
+    background: #eef6fa;
 }
 
 .stay-badge {
@@ -1953,6 +1973,8 @@ select {
     }
 
     .menus-heading { align-items: flex-start; flex-direction: column; gap: 0.8rem; }
+    .menus-heading__actions { display:grid;width:100%;margin-left:0;grid-template-columns:minmax(0,1fr); }
+    .menus-heading__actions a { box-sizing:border-box;width:100%; }
     .groups-heading { align-items: flex-start; flex-direction: column; gap: .8rem; }
     .groups-card-heading { align-items: stretch; flex-direction: column; }
     .groups-card-actions { align-items: stretch; flex-direction: column; }
