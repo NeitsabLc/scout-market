@@ -17,7 +17,7 @@ de releases. Le remote de travail doit être `origin` et pointer vers GitHub.
 
 Configurer une règle de protection ou un ruleset qui :
 
-- impose une pull request et au moins une approbation avant fusion ;
+- impose une pull request mais conserve zéro approbation obligatoire tant que le dépôt repose sur un mainteneur unique ; le mainteneur relit le diff final après le dernier changement et avant la fusion ;
 - exige la résolution des conversations ;
 - exige les contrôles GitHub Actions « Qualité et tests » et
   « Configuration de production » ;
