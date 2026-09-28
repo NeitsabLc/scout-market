@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: V004__description_recette.sql
       relativeToChangelogFile: true
+  - include:
+      file: V005__observabilite_et_index_requetes.sql
+      relativeToChangelogFile: true
