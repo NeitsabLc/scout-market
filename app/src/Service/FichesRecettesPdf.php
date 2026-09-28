@@ -260,6 +260,7 @@ final class FichesRecettesPdf
      */
     private function groupesRecette(Menu $menu, ?array $codesPublics): array
     {
+        /** @var list<array{nom: string, categorie: string, description: ?string, lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>}> $groupes */
         $groupes = [];
         $indexParCle = [];
         foreach ($menu->getDenrees() as $ligne) {
@@ -276,7 +277,10 @@ final class FichesRecettesPdf
                     'lignes' => [],
                 ];
             }
-            $groupes[$indexParCle[$cle]]['lignes'][] = $this->ligne($ligne, $codesPublics);
+            $index = $indexParCle[$cle];
+            $groupe = $groupes[$index];
+            $groupe['lignes'][] = $this->ligne($ligne, $codesPublics);
+            $groupes[$index] = $groupe;
         }
 
         return $groupes;
