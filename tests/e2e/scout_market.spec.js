@@ -59,21 +59,22 @@ test('les distributions Camp accompagné et Stage présentent les besoins attend
   await page.getByRole('link', { name: 'Stage' }).click();
   await expect(page.getByText('Produits frais, fruits et légumes à regrouper dans la caisse quotidienne de chaque unité.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Produits secs à livrer' })).toBeVisible();
+  const livraisonSeche = page.locator('.dry-delivery-card');
+  const premiereJournee = page.locator('.order-meal-card').first();
+  await expect(livraisonSeche.locator('.dry-delivery-units')).not.toBeVisible();
+  await expect(premiereJournee.locator('.crate-menus')).not.toBeVisible();
+
+  await livraisonSeche.locator('summary').click();
   await expect(page.locator('.dry-delivery-card')).toContainText('Pâtes');
   await expect(page.locator('.dry-delivery-card')).toContainText('Farfadets de la Clairière');
+  await expect(livraisonSeche.locator('.dry-delivery-units')).toBeVisible();
+
+  await premiereJournee.locator('summary').click();
   await expect(page.getByRole('heading', { name: 'Grille École des bois' }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Farfadets de la Clairière' }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Déjeuner italien' })).toHaveCount(0);
   await expect(page.locator('main')).not.toContainText('Composition : Explo');
   await expect(page.locator('.crate-menus').filter({ hasText: 'Pâtes' })).toHaveCount(0);
-
-  const livraisonSeche = page.locator('.dry-delivery-card');
-  await livraisonSeche.locator('summary').click();
-  await expect(livraisonSeche.locator('.dry-delivery-units')).not.toBeVisible();
-
-  const premiereJournee = page.locator('.order-meal-card').first();
-  await premiereJournee.locator('summary').click();
-  await expect(premiereJournee.locator('.crate-menus')).not.toBeVisible();
 });
 
 test('la saisie publique filtre les repas spéciaux selon le groupe', async ({ page }) => {
