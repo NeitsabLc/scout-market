@@ -4,7 +4,7 @@
 <main class="orders-page entity-list-page distribution-admin-page">
     {{ include('distribution/_navigation.html.twig', {page: 'en_caisse', sous_titre: 'Livraison initiale et caisses quotidiennes regroupées par journée'}) }}
     <p class="order-calculation-note">Les produits secs sont regroupés par unité dans la livraison initiale. Les produits frais, fruits et légumes restent détaillés dans les caisses quotidiennes. Les choix Explo, pique-nique et repas non pris restent appliqués sans être modifiés par ce mode.</p>
-    <details class="dry-delivery-card" open>
+    <details class="dry-delivery-card">
         <summary><div><span class="crate-menu__eyebrow">Livraison initiale</span><h2>Produits secs à livrer</h2><p>Quantités nécessaires par unité pour l’ensemble des repas à venir en Stage.</p></div><span class="order-meal-card__meta"><span>{{ produits_secs_par_unite|length }} unité{{ produits_secs_par_unite|length > 1 ? 's' : '' }}</span><span class="order-meal-card__chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></span></span></summary>
         {% if produits_secs_par_unite is empty %}<p class="order-meal-empty">Aucun produit sec n’est nécessaire pour les repas à venir.</p>
         {% else %}<div class="crate-units dry-delivery-units">{% for unite in produits_secs_par_unite %}<article class="crate-unit dry-delivery-unit">
@@ -15,7 +15,7 @@
     <header class="daily-crates-heading"><span class="crate-menu__eyebrow">Préparation quotidienne</span><h2>Caisses par jour et par unité</h2><p>Produits frais, fruits et légumes à regrouper dans la caisse quotidienne de chaque unité.</p></header>
     {% if commandes is empty %}<section class="stock-list-card"><div class="stocks-empty"><strong>Aucune caisse à préparer</strong><p>Aucun repas à venir en Stage ne contient de produit frais, fruit ou légume.</p></div></section>
     {% else %}<div class="orders-list">
-        {% for commande in commandes %}<details class="order-meal-card" open>
+        {% for commande in commandes %}<details class="order-meal-card">
             <summary><h2><time datetime="{{ commande.date|date('Y-m-d') }}">{{ commande.date|date_jour_mois }}</time></h2><span class="order-meal-card__meta"><span>{{ commande.menus|length }} menu{{ commande.menus|length > 1 ? 's' : '' }}</span><span class="order-meal-card__chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></span></span></summary>
             <div class="crate-menus">{% for detail_menu in commande.menus %}<section class="crate-menu">
                 <header><div><span class="crate-menu__eyebrow">Grille de menus</span><h3>{{ detail_menu.grille.label }}</h3></div><span>{{ detail_menu.unites|length }} unité{{ detail_menu.unites|length > 1 ? 's' : '' }}</span></header>
