@@ -67,6 +67,13 @@ final class FichesRecettesControllerTest extends WebTestCase
         }
         $entityManager->flush();
 
+        $client->request('GET', '/menus');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists(sprintf(
+            'a.menu-grid-pdf-button[href="/menus/grilles/%s/fiches-recettes.pdf"][data-turbo="false"]',
+            $grille->getId(),
+        ));
+
         $client->request('GET', sprintf('/menus/grilles/%s/fiches-recettes.pdf', $grille->getId()));
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('content-type', 'application/pdf');
