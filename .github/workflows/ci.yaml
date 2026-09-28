@@ -60,12 +60,6 @@ jobs:
             "    app.version: '${version}' # x-release-please-version" \
             app/config/services.yaml
 
-      - name: Installer Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24
-          cache: npm
-
       - name: Definir la version du cache Trivy
         id: trivy-cache
         run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
@@ -107,9 +101,6 @@ jobs:
           export SCOUT_RELEASE_BACKUP_IMAGE="ghcr.io/neitsablc/scout-market-backup@${digest}"
           docker compose -f compose.yaml -f compose.prod.yaml -f compose.release.yaml config --quiet
           test -z "$(docker compose -f compose.yaml -f compose.prod.yaml -f compose.release.yaml config --format json | jq -r '.services[] | select(.build != null) | .image')"
-
-      - name: Installer les dependances Node.js
-        run: npm ci --no-audit --no-fund
 
       - name: Auditer les dependances npm avec Trivy
         run: |
@@ -164,6 +155,24 @@ jobs:
           path: betterleaks.sarif
           if-no-files-found: ignore
           retention-days: 7
+
+  validation-schema:
+    name: Validation Liquibase
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Preparer la configuration de CI
+        run: ./scripts/ci-prepare-env.sh
+
+      - name: Valider les changelogs Liquibase
+        run: docker compose --profile tools run --rm liquibase validate
+
+      - name: Arreter les services
+        if: always()
+        run: docker compose down --volumes --remove-orphans
 
   tests-app:
     name: Tests applicatifs
@@ -242,9 +251,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: docker compose exec --no-TTY -e GITHUB_TOKEN php php bin/console importmap:audit
-
-      - name: Valider les changelogs Liquibase
-        run: docker compose --profile tools run --rm liquibase validate
 
       - name: Valider les mappings Doctrine
         run: docker compose exec --no-TTY php php bin/console doctrine:schema:validate --skip-sync
@@ -401,6 +407,7 @@ jobs:
       - titre-pr
       - qualite-rapide
       - betterleaks
+      - validation-schema
       - tests-app
       - images-securite
     runs-on: ubuntu-24.04
@@ -411,6 +418,7 @@ jobs:
           TITRE_RESULTAT: ${{ needs.titre-pr.result }}
           QUALITE_RESULTAT: ${{ needs.qualite-rapide.result }}
           BETTERLEAKS_RESULTAT: ${{ needs.betterleaks.result }}
+          SCHEMA_RESULTAT: ${{ needs.validation-schema.result }}
           TESTS_RESULTAT: ${{ needs.tests-app.result }}
           IMAGES_RESULTAT: ${{ needs.images-securite.result }}
         run: |
@@ -418,6 +426,7 @@ jobs:
             "$TITRE_RESULTAT" \
             "$QUALITE_RESULTAT" \
             "$BETTERLEAKS_RESULTAT" \
+            "$SCHEMA_RESULTAT" \
             "$TESTS_RESULTAT" \
             "$IMAGES_RESULTAT"; do
             test "$resultat" = success || exit 1

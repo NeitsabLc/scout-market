@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\Denree;
 use App\Entity\GrilleMenu;
 use App\Entity\Menu;
+use App\Entity\MenuDenree;
 use App\Entity\Recette;
 use App\Entity\TypeRepas;
+use App\Entity\Unite;
 use Symfony\Component\HttpFoundation\Request;
 
 final class PresentationMenu
@@ -92,8 +95,8 @@ final class PresentationMenu
     }
 
     /**
-     * @param list<object>                $denrees
-     * @param array<string, list<object>> $conditionnements
+     * @param list<Denree>               $denrees
+     * @param array<string, list<Unite>> $conditionnements
      *
      * @return array<string, array<string, mixed>>
      */
@@ -206,6 +209,7 @@ final class PresentationMenu
      */
     public function resumesMenusParGrille(array $menus): array
     {
+        /** @var list<array{id: string, label: string, distribution: string, menus: list<array{libelle: string, code: string, nom: ?string, elements: list<string>, recettes: list<string>, supplementaires: list<string>}>}> $resultat */
         $resultat = [];
         $indexParGrille = [];
 
@@ -228,7 +232,10 @@ final class PresentationMenu
 
             $resume = $this->resumesMenus([$menu])[0];
             $resume['code'] = $menu->getTypeRepas()?->getCode() ?? '';
-            $resultat[$indexParGrille[$id]]['menus'][] = $resume;
+            $index = $indexParGrille[$id];
+            $resumeGrille = $resultat[$index];
+            $resumeGrille['menus'][] = $resume;
+            $resultat[$index] = $resumeGrille;
         }
 
         return $resultat;
@@ -237,12 +244,13 @@ final class PresentationMenu
     /** @return list<\DateTimeImmutable> */
     public function jours(GrilleMenu $grille): array
     {
-        return iterator_to_array(new \DatePeriod($grille->getDateDebut(), new \DateInterval('P1D'), $grille->getDateFin()->modify('+1 day')));
+        return iterator_to_array(new \DatePeriod($grille->getDateDebut(), new \DateInterval('P1D'), $grille->getDateFin()->modify('+1 day')), false);
     }
 
     /** @return array<string, array<string, mixed>> */
     public function composition(?Menu $menu, bool $avecCategories): array
     {
+        /** @var array<string, array{recettes?: array<string, array{id: string, nom: string, instance: string, lignes: list<MenuDenree>}>, supplementaires?: list<MenuDenree>}> $composition */
         $composition = [];
         if (null === $menu) {
             return $composition;

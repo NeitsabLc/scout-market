@@ -157,7 +157,7 @@ final class DistributionController extends AbstractController
         return false !== $date && $date->format('Y-m-d') === $valeur ? $date : null;
     }
 
-    /** @return list<array<string, mixed>> */
+    /** @return list<array{menu: \App\Entity\Menu, lignes: list<array<string, mixed>>, grilles: list<array<string, mixed>>}> */
     private function prochainesCommandes(
         MenuRepository $menus,
         GroupeRepository $groupes,
