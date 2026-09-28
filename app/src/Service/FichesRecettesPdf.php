@@ -59,10 +59,27 @@ final class FichesRecettesPdf
      */
     private function html(GrilleMenu $grille, array $menus, ?array $codesPublics = null): string
     {
-        $nombrePages = count($menus) + 1;
+        $pagesRepas = [];
+        foreach ($menus as $menu) {
+            foreach ($this->groupesRecetteParPage($this->groupesRecette($menu, $codesPublics)) as $index => $groupes) {
+                $pagesRepas[] = [
+                    'menu' => $menu,
+                    'groupes' => $groupes,
+                    'suite' => $index > 0,
+                ];
+            }
+        }
+
+        $nombrePages = count($pagesRepas) + 1;
         $pages = [$this->pageGrille($grille, $menus, $nombrePages)];
-        foreach ($menus as $index => $menu) {
-            $pages[] = $this->pageRepas($menu, $index + 2, $nombrePages, $codesPublics);
+        foreach ($pagesRepas as $index => $pageRepas) {
+            $pages[] = $this->pageRepas(
+                $pageRepas['menu'],
+                $pageRepas['groupes'],
+                $pageRepas['suite'],
+                $index + 2,
+                $nombrePages,
+            );
         }
 
         return sprintf(
@@ -141,8 +158,15 @@ final class FichesRecettesPdf
         );
     }
 
-    /** @param array<string, true>|null $codesPublics */
-    private function pageRepas(Menu $menu, int $numeroPage, int $nombrePages, ?array $codesPublics): string
+    /**
+     * @param list<array{
+     *     nom: string,
+     *     categorie: string,
+     *     description: ?string,
+     *     lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>
+     * }> $groupes
+     */
+    private function pageRepas(Menu $menu, array $groupes, bool $suite, int $numeroPage, int $nombrePages): string
     {
         $date = $menu->getDateMenu();
         $typeRepas = $menu->getTypeRepas();
@@ -151,7 +175,7 @@ final class FichesRecettesPdf
         }
 
         $elements = '';
-        foreach ($this->groupesRecette($menu, $codesPublics) as $groupe) {
+        foreach ($groupes as $groupe) {
             $lignes = '';
             foreach ($groupe['lignes'] as $ligne) {
                 $quantites = '';
@@ -163,7 +187,7 @@ final class FichesRecettesPdf
                     );
                 }
                 $lignes .= sprintf(
-                    '<div class="ingredient"><div class="ingredient-name">%s</div><div class="quantities">%s</div></div>',
+                    '<tr><th>%s</th><td><div class="quantities">%s</div></td></tr>',
                     $this->e($ligne['nom']),
                     $quantites,
                 );
@@ -175,7 +199,7 @@ final class FichesRecettesPdf
                 ? ''
                 : '<div class="category-slot"><span class="category">'.$this->e($this->categorie($groupe['categorie'])).'</span></div>';
             $elements .= sprintf(
-                '<article class="recipe-card"><div class="recipe-card-body"><header class="recipe-heading">%s<div class="recipe-title"><h2>%s</h2></div></header><div class="ingredients">%s</div>%s</div></article>',
+                '<article class="recipe-card"><div class="recipe-card-body"><header class="recipe-heading">%s<div class="recipe-title"><h2>%s</h2></div></header><table class="ingredients"><colgroup><col style="width:50%%"><col style="width:50%%"></colgroup><tbody>%s</tbody></table>%s</div></article>',
                 $categorie,
                 $this->e($groupe['nom']),
                 $lignes,
@@ -183,13 +207,21 @@ final class FichesRecettesPdf
             );
         }
 
-        return sprintf(
-            '<section class="page meal-page"><header class="meal-header"><div><span class="eyebrow">%s %s</span><h1>%s</h1>%s</div>%s</header><main class="recipes">%s</main>%s</section>',
+        $entete = sprintf(
+            '<header class="meal-header%s"><div><span class="eyebrow">%s %s</span><h1>%s%s</h1>%s</div>%s</header>',
+            $suite ? ' meal-header-continuation' : '',
             $this->e($this->jour($date)),
             $date->format('d/m/Y'),
             $this->e($typeRepas->getLibelle()),
-            null === $menu->getNom() || '' === trim($menu->getNom()) ? '' : '<p>'.$this->e($menu->getNom()).'</p>',
+            $suite ? ' - suite' : '',
+            $suite || null === $menu->getNom() || '' === trim($menu->getNom()) ? '' : '<p>'.$this->e($menu->getNom()).'</p>',
             $this->logo(),
+        );
+
+        return sprintf(
+            '<section class="page meal-page%s">%s<main class="recipes">%s</main>%s</section>',
+            $suite ? ' meal-page-continuation' : '',
+            $entete,
             $elements,
             $this->footer($numeroPage, $nombrePages),
         );
@@ -248,6 +280,50 @@ final class FichesRecettesPdf
         }
 
         return $groupes;
+    }
+
+    /**
+     * @param list<array{
+     *     nom: string,
+     *     categorie: string,
+     *     description: ?string,
+     *     lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>
+     * }> $groupes
+     *
+     * @return list<list<array{
+     *     nom: string,
+     *     categorie: string,
+     *     description: ?string,
+     *     lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>
+     * }>>
+     */
+    private function groupesRecetteParPage(array $groupes): array
+    {
+        $pages = [];
+        $page = [];
+        $charge = 0.0;
+
+        foreach ($groupes as $groupe) {
+            $description = strip_tags($groupe['description'] ?? '');
+            $poids = 1.0
+                + max(0, count($groupe['lignes']) - 1) * 0.35
+                + min(4.0, mb_strlen($description) / 300);
+
+            if ([] !== $page && (count($page) >= 6 || $charge + $poids > 6.0)) {
+                $pages[] = $page;
+                $page = [];
+                $charge = 0.0;
+            }
+
+            $page[] = $groupe;
+            $charge += $poids;
+        }
+
+        if ([] !== $page) {
+            $pages[] = $page;
+        }
+
+        return $pages;
     }
 
     /**
@@ -376,6 +452,7 @@ html, body { margin:0; color:#003a5d; font-family:'Sarabun', sans-serif; font-si
 .page:last-child { page-break-after:auto; }
 .overview { padding-top:5mm; }
 .meal-page { padding-top:10mm; }
+.meal-page-continuation { padding-top:0; }
 .document-header, .meal-header { display:table; width:100%%; }
 .document-header>div, .meal-header>div { display:table-cell; vertical-align:middle; }
 .document-header>div:first-child, .meal-header>div:first-child { width:72%%; }
@@ -404,18 +481,19 @@ h1 { margin:2px 0 2px; color:#003a5d; font-family:'Caveat Brush', cursive; font-
 .menu-grid.days-8, .menu-grid.days-9, .menu-grid.days-10 { font-size:6.4px; }
 .no-menu { height:120px!important; text-align:center; vertical-align:middle!important; }
 .meal-header h1 { font-size:34px; }
+.meal-header-continuation h1 { font-size:24px; }
 .recipes { width:100%%; }
 .recipe-card { margin:0; padding-top:7mm; page-break-inside:avoid; }
+.meal-page-continuation .recipe-card:first-child { page-break-inside:auto; }
 .recipe-card-body { padding:4mm; border:1px solid #cfdae0; border-left:5px solid #003a5d; border-radius:6px; }
 .recipe-heading { display:table; width:100%%; margin-bottom:3mm; }
 .category-slot, .recipe-title { display:table-cell; vertical-align:middle; }
 .category-slot { width:1%%; padding-right:8px; white-space:nowrap; }
 .recipe-title h2 { margin:0; color:#003a5d; font-family:'Caveat Brush', cursive; font-size:19px; font-weight:400; line-height:1.1; }
 .category { display:inline-block; padding:2px 7px; border-radius:9px; color:#003a5d; background:#e8f2ed; font-size:7px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; }
-.ingredients { width:100%%; }
-.ingredient { padding:5px 6px; border-top:1px solid #e2e9ec; }
-.ingredient-name { margin-bottom:4px; color:#003a5d; font-size:9px; }
-.quantities { min-height:16px; }
+.ingredients { width:100%%; border-collapse:collapse; table-layout:fixed; }
+.ingredients th, .ingredients td { width:50%%; padding:5px 6px; border-top:1px solid #e2e9ec; text-align:left; vertical-align:top; }
+.ingredients th { color:#003a5d; font-size:9px; }
 .quantities span { display:inline-block; margin:0 5px 3px 0; padding:3px 5px; border-radius:10px; color:#274f64; background:#f0f5f7; font-size:7.5px; white-space:nowrap; }
 .quantities b { color:#00729b; }
 .preparation { margin-top:3mm; padding:3mm 4mm; border-radius:5px; color:#244c61; background:#f7faf8; line-height:1.4; }

@@ -70,13 +70,13 @@ final class FichesRecettesPdfTest extends TestCase
         self::assertStringContainsString('<ol><li>Découper les carottes.</li><li>Faire cuire.</li></ol>', $html);
         self::assertStringContainsString('class="recipe-heading"', $html);
         self::assertStringContainsString('class="category-slot"', $html);
-        self::assertStringContainsString('<div class="ingredients">', $html);
-        self::assertStringContainsString('class="ingredient-name"', $html);
-        self::assertStringContainsString('.ingredient-name { margin-bottom:4px;', $html);
-        self::assertStringContainsString('.quantities { min-height:16px;', $html);
+        self::assertStringContainsString('<table class="ingredients">', $html);
+        self::assertStringContainsString('<col style="width:50%"><col style="width:50%">', $html);
+        self::assertStringContainsString('.ingredients th, .ingredients td { width:50%;', $html);
         self::assertStringContainsString('class="menu-cell"', $html);
         self::assertStringContainsString('class="recipe-card-body"', $html);
         self::assertStringContainsString('.recipe-card { margin:0; padding-top:7mm; page-break-inside:avoid;', $html);
+        self::assertStringContainsString('.meal-page-continuation .recipe-card:first-child { page-break-inside:auto; }', $html);
         self::assertStringContainsString('.recipe-card-body { padding:4mm;', $html);
         self::assertStringNotContainsString('class="recipes-table"', $html);
         self::assertStringNotContainsString('repas-viande.svg', $html);
@@ -84,6 +84,7 @@ final class FichesRecettesPdfTest extends TestCase
         self::assertStringContainsString('@page { size:A4 portrait; margin:19mm 11mm 11mm; }', $html);
         self::assertStringContainsString('.overview { padding-top:5mm; }', $html);
         self::assertStringContainsString('.meal-page { padding-top:10mm; }', $html);
+        self::assertStringContainsString('.meal-header-continuation h1 { font-size:24px; }', $html);
         self::assertStringContainsString('logo-jambville-horizontal.png', $html);
         self::assertStringContainsString('class="logo-cell"', $html);
         self::assertStringContainsString('.logo-cell { text-align:right; }', $html);
