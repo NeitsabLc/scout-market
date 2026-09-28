@@ -163,7 +163,7 @@ final class FichesRecettesPdf
                     );
                 }
                 $lignes .= sprintf(
-                    '<tr><th>%s</th><td><div class="quantities">%s</div></td></tr>',
+                    '<div class="ingredient"><div class="ingredient-name">%s</div><div class="quantities">%s</div></div>',
                     $this->e($ligne['nom']),
                     $quantites,
                 );
@@ -175,7 +175,7 @@ final class FichesRecettesPdf
                 ? ''
                 : '<div class="category-slot"><span class="category">'.$this->e($this->categorie($groupe['categorie'])).'</span></div>';
             $elements .= sprintf(
-                '<article class="recipe-card"><header class="recipe-heading">%s<div class="recipe-title"><h2>%s</h2></div></header><table class="ingredients"><tbody>%s</tbody></table>%s</article>',
+                '<article class="recipe-card"><div class="recipe-card-body"><header class="recipe-heading">%s<div class="recipe-title"><h2>%s</h2></div></header><div class="ingredients">%s</div>%s</div></article>',
                 $categorie,
                 $this->e($groupe['nom']),
                 $lignes,
@@ -314,11 +314,12 @@ final class FichesRecettesPdf
 
     private function logo(): string
     {
-        $chemin = $this->projectDir.'/assets/images/logo-sgdf-horizontal.png';
+        $chemin = $this->projectDir.'/assets/images/logo-jambville-horizontal.png';
+        $contenu = !is_file($chemin)
+            ? '<strong class="brand">CENTRE D’ACTIVITÉS DE JAMBVILLE</strong>'
+            : '<img class="logo" src="file://'.str_replace(' ', '%20', $chemin).'" alt="Centre d’activités de Jambville">';
 
-        return !is_file($chemin)
-            ? '<strong class="brand">SCOUTS ET GUIDES DE FRANCE</strong>'
-            : '<img class="logo" src="file://'.str_replace(' ', '%20', $chemin).'" alt="Scouts et Guides de France">';
+        return '<div class="logo-cell">'.$contenu.'</div>';
     }
 
     private function pictoViande(Menu $menu): string
@@ -368,15 +369,18 @@ final class FichesRecettesPdf
 @font-face { font-family:'Caveat Brush'; src:url('%s') format('truetype'); font-weight:400; }
 @font-face { font-family:'Sarabun'; src:url('%s') format('truetype'); font-weight:400; }
 @font-face { font-family:'Sarabun'; src:url('%s') format('truetype'); font-weight:700; }
-@page { size:A4 portrait; margin:11mm; }
+@page { size:A4 portrait; margin:19mm 11mm 11mm; }
 * { box-sizing:border-box; }
 html, body { margin:0; color:#003a5d; font-family:'Sarabun', sans-serif; font-size:10px; }
-.page { position:relative; min-height:274mm; padding:8mm 7mm 12mm; border:1px dashed #6cbda4; border-radius:10px; page-break-after:always; }
+.page { position:relative; min-height:266mm; padding:0 7mm 12mm; page-break-after:always; }
 .page:last-child { page-break-after:auto; }
+.overview { padding-top:5mm; }
+.meal-page { padding-top:10mm; }
 .document-header, .meal-header { display:table; width:100%%; }
 .document-header>div, .meal-header>div { display:table-cell; vertical-align:middle; }
 .document-header>div:first-child, .meal-header>div:first-child { width:72%%; }
-.logo { display:block; width:126px; margin-left:auto; }
+.logo-cell { text-align:right; }
+.logo { display:inline-block; width:190px; margin:0; }
 .brand { display:block; text-align:right; font-size:11px; }
 .eyebrow { color:#0089b7; font-size:9px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; }
 h1, h2, h3, p { margin-top:0; }
@@ -400,16 +404,18 @@ h1 { margin:2px 0 2px; color:#003a5d; font-family:'Caveat Brush', cursive; font-
 .menu-grid.days-8, .menu-grid.days-9, .menu-grid.days-10 { font-size:6.4px; }
 .no-menu { height:120px!important; text-align:center; vertical-align:middle!important; }
 .meal-header h1 { font-size:34px; }
-.recipes { width:100%%; margin-top:7mm; }
-.recipe-card { margin:0 0 5mm; padding:4mm; border:1px solid #cfdae0; border-left:5px solid #003a5d; border-radius:6px; page-break-inside:avoid; }
+.recipes { width:100%%; }
+.recipe-card { margin:0; padding-top:7mm; page-break-inside:avoid; }
+.recipe-card-body { padding:4mm; border:1px solid #cfdae0; border-left:5px solid #003a5d; border-radius:6px; }
 .recipe-heading { display:table; width:100%%; margin-bottom:3mm; }
 .category-slot, .recipe-title { display:table-cell; vertical-align:middle; }
 .category-slot { width:1%%; padding-right:8px; white-space:nowrap; }
 .recipe-title h2 { margin:0; color:#003a5d; font-family:'Caveat Brush', cursive; font-size:19px; font-weight:400; line-height:1.1; }
 .category { display:inline-block; padding:2px 7px; border-radius:9px; color:#003a5d; background:#e8f2ed; font-size:7px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; }
-.ingredients { width:100%%; border-collapse:collapse; table-layout:fixed; }
-.ingredients th, .ingredients td { padding:5px 6px; border-top:1px solid #e2e9ec; text-align:left; vertical-align:top; }
-.ingredients th { width:31%%; color:#003a5d; font-size:9px; }
+.ingredients { width:100%%; }
+.ingredient { padding:5px 6px; border-top:1px solid #e2e9ec; }
+.ingredient-name { margin-bottom:4px; color:#003a5d; font-size:9px; }
+.quantities { min-height:16px; }
 .quantities span { display:inline-block; margin:0 5px 3px 0; padding:3px 5px; border-radius:10px; color:#274f64; background:#f0f5f7; font-size:7.5px; white-space:nowrap; }
 .quantities b { color:#00729b; }
 .preparation { margin-top:3mm; padding:3mm 4mm; border-radius:5px; color:#244c61; background:#f7faf8; line-height:1.4; }
@@ -417,9 +423,10 @@ h1 { margin:2px 0 2px; color:#003a5d; font-family:'Caveat Brush', cursive; font-
 .preparation p { margin:0 0 4px; }
 .preparation ul, .preparation ol { margin:3px 0 0; padding-left:17px; }
 .preparation li { margin-bottom:2px; }
-footer { position:absolute; right:7mm; bottom:4mm; left:7mm; display:table; padding-top:3px; border-top:1px solid #dbe5e8; color:#6c818c; font-size:7px; }
-footer span { display:table-cell; }
-footer span:last-child { text-align:right; }
+footer { position:absolute; right:7mm; bottom:10mm; left:7mm; height:5mm; padding-top:4px; border-top:1px solid #dbe5e8; color:#6c818c; font-size:7px; }
+footer span { position:absolute; top:4px; }
+footer span:first-child { left:0; }
+footer span:last-child { right:0; text-align:right; }
 CSS,
             $font($this->projectDir.'/assets/fonts/caveat-brush/CaveatBrush-Regular.ttf'),
             $font($this->projectDir.'/assets/fonts/sarabun/Sarabun-Regular.ttf'),
