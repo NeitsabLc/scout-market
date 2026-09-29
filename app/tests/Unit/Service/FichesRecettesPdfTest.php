@@ -17,6 +17,8 @@ use App\Entity\Unite;
 use App\Service\AffichageQuantite;
 use App\Service\DescriptionRecetteSanitizer;
 use App\Service\FichesRecettesPdf;
+use App\Service\GenerateurPdfHtml;
+use App\Service\PreparationFichesRecettes;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\UuidV7;
 
@@ -56,10 +58,11 @@ final class FichesRecettesPdfTest extends TestCase
                     ->setPublicCible($public)
                     ->setQuantiteIndividuelle('120.000')));
 
+        $preparation = new PreparationFichesRecettes(new AffichageQuantite(), new DescriptionRecetteSanitizer());
         $service = new FichesRecettesPdf(
             dirname(__DIR__, 3),
-            new AffichageQuantite(),
-            new DescriptionRecetteSanitizer(),
+            new GenerateurPdfHtml(dirname(__DIR__, 3)),
+            $preparation,
         );
         $methode = new \ReflectionMethod($service, 'html');
         $html = $methode->invoke($service, $grille, [$menu]);
@@ -137,21 +140,21 @@ final class FichesRecettesPdfTest extends TestCase
             (new Groupe())->setType('adulte'),
         ];
 
+        $preparation = new PreparationFichesRecettes(new AffichageQuantite(), new DescriptionRecetteSanitizer());
         $service = new FichesRecettesPdf(
             dirname(__DIR__, 3),
-            new AffichageQuantite(),
-            new DescriptionRecetteSanitizer(),
+            new GenerateurPdfHtml(dirname(__DIR__, 3)),
+            $preparation,
         );
-        $codesPublics = new \ReflectionMethod($service, 'codesPublics');
         $html = new \ReflectionMethod($service, 'html');
 
-        $htmlFiltre = $html->invoke($service, $grille, [$menu], $codesPublics->invoke($service, $groupes));
+        $htmlFiltre = $html->invoke($service, $grille, [$menu], $preparation->codesPublics($groupes));
         self::assertIsString($htmlFiltre);
         self::assertStringContainsString('Louveteaux-Jeannettes', $htmlFiltre);
         self::assertStringContainsString('Adultes', $htmlFiltre);
         self::assertStringNotContainsString('Scouts-Guides', $htmlFiltre);
 
-        $htmlSansGroupe = $html->invoke($service, $grille, [$menu], $codesPublics->invoke($service, []));
+        $htmlSansGroupe = $html->invoke($service, $grille, [$menu], $preparation->codesPublics([]));
         self::assertIsString($htmlSansGroupe);
         self::assertStringContainsString('Louveteaux-Jeannettes', $htmlSansGroupe);
         self::assertStringContainsString('Scouts-Guides', $htmlSansGroupe);
