@@ -72,6 +72,14 @@ make db-shell
 
 `make dev-data` recharge un jeu de démonstration daté. Il ne doit être utilisé qu’en développement ou en test. Un changeset déjà appliqué ne doit jamais être modifié ; toute évolution crée un nouveau changeset versionné. `make reset` détruit les conteneurs, les volumes et la base locale.
 
+En production, `pg_stat_statements` agrège les requêtes normalisées depuis le dernier redémarrage ou la dernière remise à zéro des statistiques. Le rapport ci-dessous utilise exclusivement le rôle d’administration PostgreSQL et n'accorde aucun droit supplémentaire au rôle applicatif :
+
+```bash
+make db-performance-report
+```
+
+Laisser idéalement la collecte couvrir sept jours représentatifs avant d'interpréter le temps total, le temps moyen, le maximum et l'utilisation des index. Le rapport ne remet jamais les statistiques à zéro et sa sortie, qui décrit les requêtes exécutées, ne doit pas être publiée telle quelle. Une requête candidate à l'optimisation doit ensuite être vérifiée avec `EXPLAIN (ANALYZE, BUFFERS)` sur une copie ou pendant une plage maîtrisée ; `ANALYZE` exécute réellement la requête.
+
 ## Déploiement sur un serveur
 
 La procédure générale consiste à :

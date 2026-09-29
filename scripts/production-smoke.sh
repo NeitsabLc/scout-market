@@ -144,6 +144,36 @@ compose --profile tools run --rm \
 compose exec --no-TTY database scout-market-harden-roles prepare
 compose --profile tools run --rm liquibase update
 compose exec --no-TTY database sh -ec '
+    observabilite=$(PGPASSWORD="$POSTGRES_ADMIN_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_ADMIN_USER" --dbname="$POSTGRES_DB" \
+        --tuples-only --no-align --set=ON_ERROR_STOP=1 \
+        --command="SELECT
+            current_setting('\''shared_preload_libraries'\'') LIKE '\''%pg_stat_statements%'\'',
+            EXISTS (SELECT 1 FROM pg_extension WHERE extname = '\''pg_stat_statements'\''),
+            (SELECT count(*) >= 0 FROM pg_stat_statements)")
+    test "$observabilite" = "t|t|t"
+
+    index_count=$(PGPASSWORD="$POSTGRES_ADMIN_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_ADMIN_USER" --dbname="$POSTGRES_DB" \
+        --tuples-only --no-align --set=ON_ERROR_STOP=1 \
+        --command="SELECT count(*) FROM pg_indexes
+            WHERE schemaname = '\''scout_market'\''
+              AND indexname IN (
+                '\''idx_recette_denree_recette_ordre'\'',
+                '\''idx_recette_denree_denree_recette'\'',
+                '\''idx_menu_denree_menu_ordre'\'',
+                '\''idx_menu_denree_denree_menu_ordre'\'',
+                '\''idx_mouvement_ligne_denree_mouvement'\'',
+                '\''idx_groupe_grille_nom_actif'\''
+              )")
+    test "$index_count" = "6"
+'
+compose exec --no-TTY database sh -ec '
+    PGPASSWORD="$POSTGRES_ADMIN_PASSWORD" psql --host=127.0.0.1 \
+        --username="$POSTGRES_ADMIN_USER" --dbname="$POSTGRES_DB" \
+        --set=ON_ERROR_STOP=1
+' < database/performance/top_requetes.sql >/dev/null
+compose exec --no-TTY database sh -ec '
     admin=$(PGPASSWORD="$POSTGRES_ADMIN_PASSWORD" psql --host=127.0.0.1 \
         --username="$POSTGRES_ADMIN_USER" --dbname="$POSTGRES_DB" \
         --tuples-only --no-align --set=ON_ERROR_STOP=1 \
