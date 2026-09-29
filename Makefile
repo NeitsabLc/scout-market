@@ -15,6 +15,7 @@ TEST_DATABASE_URL := jdbc:postgresql://database:5432/$(TEST_DATABASE)
 	prod-config prod-build prod-up prod-ps prod-logs prod-db-bootstrap prod-db-status prod-db-update \
 	logs shell console composer composer-install cache-clear assets-compile \
 	db-validate db-status db-status-dev db-sql db-sql-dev db-update db-update-dev dev-data db-history db-shell db-check-connection \
+	db-performance-report \
 	doctrine-validate style style-fix analyse-statique \
 	test-accessibility test-e2e test-db-reset test reset clean backup-now backup-restore-test production-smoke \
 	release-config release-verify release-pull release-backup-now release-db-status release-db-update release-up release-ps release-maintenance-now \
@@ -124,6 +125,12 @@ db-history: ## Afficher l'historique Liquibase
 db-shell: ## Ouvrir une console PostgreSQL
 	$(DOCKER_COMPOSE) exec database \
 		psql -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+
+db-performance-report: ## Afficher les requêtes coûteuses et l'utilisation des index en production
+	$(DOCKER_COMPOSE_PROD) exec --no-TTY database sh -ec \
+		'PGPASSWORD="$$POSTGRES_ADMIN_PASSWORD" psql --host=127.0.0.1 \
+		--username="$$POSTGRES_ADMIN_USER" --dbname="$$POSTGRES_DB" \
+		--set=ON_ERROR_STOP=1' < database/performance/top_requetes.sql
 
 doctrine-validate: ## Vérifier le mapping Doctrine
 	$(DOCKER_COMPOSE) exec php php bin/console doctrine:schema:validate --skip-sync
