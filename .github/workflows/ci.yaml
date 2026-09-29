@@ -350,6 +350,7 @@ jobs:
         run: |
           docker compose ps
           docker compose logs --no-color --tail=200 database php nginx
+          docker compose exec --no-TTY php php bin/ci-symfony-errors.php
 
       - name: Arreter les services
         if: always()
