@@ -162,7 +162,8 @@ jobs:
             "$BETTERLEAKS_IMAGE" git /src \
             --log-opts="$BASE_SHA..$HEAD_SHA" \
             --report-path /src/betterleaks.sarif \
-            --report-format sarif
+            --report-format sarif \
+            --redact
           mkdir .betterleaks-worktree
           git archive "$HEAD_SHA" | tar -x -C .betterleaks-worktree
           docker run --rm \
