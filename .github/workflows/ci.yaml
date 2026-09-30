@@ -327,6 +327,9 @@ jobs:
           docker compose --profile tools run --rm liquibase update --context-filter=dev
           docker compose exec --no-TTY -e APP_ENV=dev php php bin/console app:dev:charger-jeu-donnees
 
+      - name: Retablir les droits des fichiers d'execution
+        run: docker compose exec --no-TTY php chown -R www-data:www-data var/cache var/log
+
       - name: Attendre que l'application soit disponible
         run: curl --fail --retry 30 --retry-delay 2 --retry-all-errors "${APP_BASE_URL}/login"
 
