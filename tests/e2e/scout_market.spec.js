@@ -108,6 +108,12 @@ test('la commande tient compte des livraisons déjà effectuées', async ({ page
   const fraisDejaLivre = page.getByRole('checkbox', { name: 'Frais de la journée déjà livré' });
   await expect(secDejaLivre).toBeVisible();
   await expect(fraisDejaLivre).toBeVisible();
+  for (const selecteur of ['#final-order-deduction', '#final-order-start', '#final-order-end']) {
+    const champ = page.locator(selecteur);
+    await expect(champ.locator('option').filter({ hasText: 'Petit-déjeuner' }).first()).toBeAttached();
+    await expect(champ.locator('option').filter({ hasText: 'Goûter' }).first()).toBeAttached();
+  }
+  await expect(page.locator('.final-order-options')).toContainText('y compris ceux des petits-déjeuners et goûters');
   await secDejaLivre.check();
   await fraisDejaLivre.check();
   await page.getByRole('button', { name: 'Calculer la commande' }).click();

@@ -235,6 +235,83 @@ final class ScoutMarketTest extends WebTestCase
         self::assertSelectorTextContains('.order-calculation-note', 'Explo, pique-nique et repas non pris');
     }
 
+    public function testLaCommandeProposeLesPetitsDejeunersEtLesGouters(): void
+    {
+        $client = static::createClient();
+        $client->loginUser($this->administrateur());
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        $typeRepasRepository = static::getContainer()->get(TypeRepasRepository::class);
+        $date = new \DateTimeImmutable('+2 years');
+        $grille = new GrilleMenu('Grille commande '.bin2hex(random_bytes(4)), $date, $date);
+        $typePetitDejeuner = $typeRepasRepository->findOneBy(['code' => 'PETIT_DEJEUNER']);
+        $typeDejeuner = $typeRepasRepository->findOneBy(['code' => 'DEJEUNER']);
+        $typeGouter = $typeRepasRepository->findOneBy(['code' => 'GOUTER']);
+        self::assertNotNull($typePetitDejeuner);
+        self::assertNotNull($typeDejeuner);
+        self::assertNotNull($typeGouter);
+        $petitDejeuner = (new Menu())
+            ->setGrilleMenu($grille)
+            ->setTypeRepas($typePetitDejeuner)
+            ->setDateMenu($date);
+        $dejeuner = (new Menu())
+            ->setGrilleMenu($grille)
+            ->setTypeRepas($typeDejeuner)
+            ->setDateMenu($date);
+        $gouter = (new Menu())
+            ->setGrilleMenu($grille)
+            ->setTypeRepas($typeGouter)
+            ->setDateMenu($date);
+        $entityManager->persist($grille);
+        $entityManager->persist($petitDejeuner);
+        $entityManager->persist($dejeuner);
+        $entityManager->persist($gouter);
+        $entityManager->flush();
+
+        try {
+            $client->request('GET', '/intendance/commande');
+
+            self::assertResponseIsSuccessful();
+            foreach (['#final-order-deduction', '#final-order-start', '#final-order-end'] as $selecteur) {
+                self::assertSelectorExists(sprintf(
+                    '%s option[value="%s"]',
+                    $selecteur,
+                    $petitDejeuner->getId(),
+                ));
+                self::assertSelectorExists(sprintf(
+                    '%s option[value="%s"]',
+                    $selecteur,
+                    $gouter->getId(),
+                ));
+            }
+            self::assertSelectorTextContains(
+                '#final-order-period',
+                'Tous les repas de la période, petits-déjeuners et goûters compris, sont inclus dans le calcul.',
+            );
+            self::assertSelectorTextContains(
+                '.final-order-options',
+                'y compris ceux des petits-déjeuners et goûters',
+            );
+
+            $client->request('GET', '/intendance/commande', [
+                'calculer' => '1',
+                'repas_debut' => (string) $petitDejeuner->getId(),
+                'repas_fin' => (string) $gouter->getId(),
+            ]);
+
+            self::assertResponseIsSuccessful();
+            self::assertSelectorNotExists('.flash--error');
+            self::assertSelectorTextContains('.final-order-card', 'Petit-déjeuner');
+            self::assertSelectorTextContains('.final-order-card', 'Goûter');
+        } finally {
+            $entityManager->clear();
+            $grillePersistante = $entityManager->find(GrilleMenu::class, $grille->getId());
+            if (null !== $grillePersistante) {
+                $entityManager->remove($grillePersistante);
+                $entityManager->flush();
+            }
+        }
+    }
+
     public function testLaFicheUnitePermetDeDeclarerLesRepasSpecifiques(): void
     {
         $client = static::createClient();

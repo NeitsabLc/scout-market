@@ -53,10 +53,7 @@ final class CommandeController extends AbstractController
             static fn (array $commande): bool => null !== $commande['menu']->getDateMenu()
                 && $commande['menu']->getDateMenu() >= $aujourdhui,
         ));
-        $commandesCalculables = array_values(array_filter(
-            $commandes,
-            static fn (array $commande): bool => 'PETIT_DEJEUNER' !== $commande['menu']->getTypeRepas()?->getCode(),
-        ));
+        $commandesCalculables = $commandes;
         $indexRepas = [];
         foreach ($commandesCalculables as $index => $commande) {
             $indexRepas[(string) $commande['menu']->getId()] = $index;
