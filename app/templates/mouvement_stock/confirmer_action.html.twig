@@ -11,7 +11,7 @@
         <p>Le mouvement restera visible dans le journal, mais son effet sera retiré du calcul du stock.</p>
         <form method="post">
             <input type="hidden" name="_token" value="{{ csrf_token('annuler_mouvement_stock_' ~ mouvement.id) }}">
-            <label>Motif <b>*</b><textarea name="motif" maxlength="1000" rows="4" required autofocus>{{ app.request.request.get('motif') }}</textarea><small>Ce motif sera conservé dans l’historique d’audit.</small></label>
+            <label>Motif <b>*</b><textarea name="motif" maxlength="1000" rows="4" required autofocus>{{ app.request.request.get('motif') }}</textarea><small>Ce motif sera conservé dans l’historique d’audit. N’y indiquez aucune donnée personnelle.</small></label>
             <div class="stock-movement-actions"><a class="food-secondary" href="{{ path('app_mouvements_stock') }}">Retour</a><button class="food-primary" type="submit">Confirmer l’annulation</button></div>
         </form>
     </section>

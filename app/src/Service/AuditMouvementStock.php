@@ -104,7 +104,7 @@ final class AuditMouvementStock
         }
 
         $mouvementId = $mouvement instanceof MouvementStock ? (string) $mouvement->getId() : $mouvement;
-        $libelle = trim($utilisateur->getPrenom().' '.$utilisateur->getNom()).' <'.$utilisateur->getEmail().'>';
+        $libelle = trim($utilisateur->getPrenom().' '.$utilisateur->getNom());
         $this->connexion->insert('scout_market.audit_mouvement_stock', [
             'id' => Uuid::v7()->toRfc4122(),
             'mouvement_stock_id' => $mouvementId,

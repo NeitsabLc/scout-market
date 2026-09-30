@@ -13,11 +13,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'app:donnees:purger',
-    description: 'Applique les durées de conservation des comptes et des unités participantes.',
+    description: 'Applique les durées de conservation des comptes, audits, fournisseurs et unités participantes.',
 )]
 final class PurgerDonneesExpireesCommand extends Command
 {
     private const UTILISATEUR_TECHNIQUE = 'saisie-consommation@scout-market.local';
+    private const LIBELLE_UTILISATEUR_ANONYMISE = 'Utilisateur anonymisé';
 
     public function __construct(private readonly Connection $connexion)
     {
@@ -41,8 +42,19 @@ final class PurgerDonneesExpireesCommand extends Command
 
         $finAnneeScolaire = $this->derniereFinAnneeScolaire($dateReference);
         $limiteComptes = $dateReference->modify('-1 month');
+        $limiteAudits = $dateReference->modify('-1 year');
+        $limiteCoordonneesFournisseurs = $dateReference->modify('-2 years');
 
-        $resultats = $this->connexion->transactional(function (Connection $connexion) use ($finAnneeScolaire, $limiteComptes, $dateReference): array {
+        /**
+         * @return array{
+         *     groupes: int,
+         *     comptes_desactives: int,
+         *     comptes_supprimes: int,
+         *     audits_anonymises: int,
+         *     fournisseurs_anonymises: int
+         * }
+         */
+        $appliquerPurge = function (Connection $connexion) use ($finAnneeScolaire, $limiteComptes, $limiteAudits, $limiteCoordonneesFournisseurs, $dateReference): array {
             $parametresGroupes = [
                 'fin_annee_scolaire' => $finAnneeScolaire->format('Y-m-d'),
                 'maintenant' => $dateReference->format('Y-m-d H:i:sP'),
@@ -93,6 +105,16 @@ final class PurgerDonneesExpireesCommand extends Command
                   AND id <> :utilisateur_technique
                 SQL;
 
+            $auditsAnonymisesAvecCompte = $connexion->executeStatement(
+                "UPDATE scout_market.audit_mouvement_stock
+                 SET utilisateur_id = NULL,
+                     utilisateur_libelle = :libelle_anonyme,
+                     etat_avant = etat_avant #- '{mouvement,utilisateur_id}' #- '{mouvement,annule_par_id}',
+                     etat_apres = etat_apres #- '{mouvement,utilisateur_id}' #- '{mouvement,annule_par_id}'
+                 WHERE utilisateur_id IN ($comptesExpires)",
+                $parametresComptes + ['libelle_anonyme' => self::LIBELLE_UTILISATEUR_ANONYMISE],
+            );
+
             $connexion->executeStatement(
                 "UPDATE scout_market.mouvement_stock
                  SET utilisateur_id = :utilisateur_technique
@@ -110,18 +132,74 @@ final class PurgerDonneesExpireesCommand extends Command
                 $parametresComptes,
             );
 
+            $auditsAnonymisesParAge = $connexion->executeStatement(
+                <<<'SQL'
+                    UPDATE scout_market.audit_mouvement_stock
+                    SET utilisateur_id = NULL,
+                        utilisateur_libelle = :libelle_anonyme,
+                        etat_avant = etat_avant #- '{mouvement,utilisateur_id}' #- '{mouvement,annule_par_id}',
+                        etat_apres = etat_apres #- '{mouvement,utilisateur_id}' #- '{mouvement,annule_par_id}'
+                    WHERE created_at <= :limite
+                      AND (
+                          utilisateur_id IS NOT NULL
+                          OR utilisateur_libelle <> :libelle_anonyme
+                          OR etat_avant #> '{mouvement,utilisateur_id}' IS NOT NULL
+                          OR etat_avant #> '{mouvement,annule_par_id}' IS NOT NULL
+                          OR etat_apres #> '{mouvement,utilisateur_id}' IS NOT NULL
+                          OR etat_apres #> '{mouvement,annule_par_id}' IS NOT NULL
+                      )
+                    SQL,
+                [
+                    'libelle_anonyme' => self::LIBELLE_UTILISATEUR_ANONYMISE,
+                    'limite' => $limiteAudits->format('Y-m-d H:i:sP'),
+                ],
+            );
+
+            $fournisseursAnonymises = $connexion->executeStatement(
+                <<<'SQL'
+                    UPDATE scout_market.fournisseur
+                    SET telephone = NULL,
+                        email = NULL,
+                        adresse = NULL,
+                        updated_at = :maintenant
+                    WHERE actif = FALSE
+                      AND updated_at <= :limite
+                      AND (telephone IS NOT NULL OR email IS NOT NULL OR adresse IS NOT NULL)
+                    SQL,
+                [
+                    'limite' => $limiteCoordonneesFournisseurs->format('Y-m-d H:i:sP'),
+                    'maintenant' => $dateReference->format('Y-m-d H:i:sP'),
+                ],
+            );
+
             return [
                 'groupes' => $groupesSupprimes,
                 'comptes_desactives' => $comptesDesactives,
                 'comptes_supprimes' => $comptesSupprimes,
+                'audits_anonymises' => (int) $auditsAnonymisesAvecCompte + (int) $auditsAnonymisesParAge,
+                'fournisseurs_anonymises' => $fournisseursAnonymises,
             ];
-        });
+        };
+
+        $this->connexion->beginTransaction();
+        try {
+            $resultats = $appliquerPurge($this->connexion);
+            $this->connexion->commit();
+        } catch (\Throwable $exception) {
+            if ($this->connexion->isTransactionActive()) {
+                $this->connexion->rollBack();
+            }
+
+            throw $exception;
+        }
 
         $output->writeln(sprintf(
-            '<info>Purge terminée : %d unité(s) supprimée(s), %d compte(s) d’unité désactivé(s), %d compte(s) supprimé(s).</info>',
+            '<info>Purge terminée : %d unité(s) supprimée(s), %d compte(s) d’unité désactivé(s), %d compte(s) supprimé(s), %d audit(s) anonymisé(s), %d fournisseur(s) sans coordonnées.</info>',
             $resultats['groupes'],
             $resultats['comptes_desactives'],
             $resultats['comptes_supprimes'],
+            $resultats['audits_anonymises'],
+            $resultats['fournisseurs_anonymises'],
         ));
 
         return Command::SUCCESS;

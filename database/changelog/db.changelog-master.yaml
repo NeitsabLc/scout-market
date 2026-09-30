@@ -14,3 +14,6 @@ databaseChangeLog:
   - include:
       file: V005__observabilite_et_index_requetes.sql
       relativeToChangelogFile: true
+  - include:
+      file: V006__minimiser_donnees_audit.sql
+      relativeToChangelogFile: true
