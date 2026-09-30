@@ -176,7 +176,7 @@ final class PurgerDonneesExpireesCommand extends Command
                 'groupes' => $groupesSupprimes,
                 'comptes_desactives' => $comptesDesactives,
                 'comptes_supprimes' => $comptesSupprimes,
-                'audits_anonymises' => $auditsAnonymisesAvecCompte + $auditsAnonymisesParAge,
+                'audits_anonymises' => (int) $auditsAnonymisesAvecCompte + (int) $auditsAnonymisesParAge,
                 'fournisseurs_anonymises' => $fournisseursAnonymises,
             ];
         };

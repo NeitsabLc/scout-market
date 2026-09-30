@@ -7,10 +7,6 @@ namespace App\Service;
 use App\Entity\GrilleMenu;
 use App\Entity\Groupe;
 use App\Entity\Menu;
-use App\Entity\MenuDenree;
-use App\Entity\MenuDenreeQuantite;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final class FichesRecettesPdf
@@ -18,8 +14,8 @@ final class FichesRecettesPdf
     public function __construct(
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
-        private readonly AffichageQuantite $affichageQuantite,
-        private readonly DescriptionRecetteSanitizer $descriptionSanitizer,
+        private readonly GenerateurPdfHtml $generateurPdf,
+        private readonly PreparationFichesRecettes $preparation,
     ) {
     }
 
@@ -36,21 +32,10 @@ final class FichesRecettesPdf
                 && !$menu->getDenrees()->isEmpty(),
         ));
 
-        $options = new Options();
-        $repertoireTemporaire = sys_get_temp_dir();
-        $options->setTempDir($repertoireTemporaire);
-        $options->setFontDir($repertoireTemporaire);
-        $options->setFontCache($repertoireTemporaire);
-        $options->setChroot($this->projectDir);
-        $options->setIsRemoteEnabled(false);
-        $options->setDefaultFont('Sarabun');
-
-        $dompdf = new Dompdf($options);
-        $dompdf->setPaper('a4', 'portrait');
-        $dompdf->loadHtml($this->html($grille, $menus, $this->codesPublics($groupes)), 'UTF-8');
-        $dompdf->render();
-
-        return $dompdf->output();
+        return $this->generateurPdf->generer(
+            $this->html($grille, $menus, $this->preparation->codesPublics($groupes)),
+            'Sarabun',
+        );
     }
 
     /**
@@ -61,7 +46,7 @@ final class FichesRecettesPdf
     {
         $pagesRepas = [];
         foreach ($menus as $menu) {
-            foreach ($this->groupesRecetteParPage($this->groupesRecette($menu, $codesPublics)) as $index => $groupes) {
+            foreach ($this->preparation->repartirParPage($this->preparation->groupes($menu, $codesPublics)) as $index => $groupes) {
                 $pagesRepas[] = [
                     'menu' => $menu,
                     'groupes' => $groupes,
@@ -131,7 +116,7 @@ final class FichesRecettesPdf
                 }
                 $elements = array_map(
                     fn (string $element): string => '<li>'.$this->e($element).'</li>',
-                    $this->elementsMenu($menu),
+                    $this->preparation->elementsMenu($menu),
                 );
                 $cellules .= sprintf(
                     '<td class="menu-cell">%s<ul>%s</ul></td>',
@@ -225,158 +210,6 @@ final class FichesRecettesPdf
             $elements,
             $this->footer($numeroPage, $nombrePages),
         );
-    }
-
-    /** @return list<string> */
-    private function elementsMenu(Menu $menu): array
-    {
-        $elements = [];
-        $recettesVues = [];
-        foreach ($menu->getDenrees() as $ligne) {
-            $recette = $ligne->getRecette();
-            if (null === $recette) {
-                $elements[] = $ligne->getDenree()->getNom();
-                continue;
-            }
-            $instance = (string) ($ligne->getRecetteInstanceId() ?? $recette->getId());
-            if (!isset($recettesVues[$instance])) {
-                $recettesVues[$instance] = true;
-                $elements[] = $recette->getNom();
-            }
-        }
-
-        return $elements;
-    }
-
-    /**
-     * @param array<string, true>|null $codesPublics
-     *
-     * @return list<array{
-     *     nom: string,
-     *     categorie: string,
-     *     description: ?string,
-     *     lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>
-     * }>
-     */
-    private function groupesRecette(Menu $menu, ?array $codesPublics): array
-    {
-        $groupes = [];
-        $indexParCle = [];
-        foreach ($menu->getDenrees() as $ligne) {
-            $recette = $ligne->getRecette();
-            $cle = null === $recette
-                ? 'denree:'.(string) $ligne->getId()
-                : 'recette:'.(string) ($ligne->getRecetteInstanceId() ?? $recette->getId());
-            if (!isset($indexParCle[$cle])) {
-                $indexParCle[$cle] = count($groupes);
-                $groupes[] = [
-                    'nom' => $recette?->getNom() ?? $ligne->getDenree()->getNom(),
-                    'categorie' => $ligne->getCategorie() ?? '',
-                    'description' => null === $recette ? null : $this->descriptionSanitizer->nettoyer($recette->getDescription() ?? ''),
-                    'lignes' => [],
-                ];
-            }
-            $groupes[$indexParCle[$cle]]['lignes'][] = $this->ligne($ligne, $codesPublics);
-        }
-
-        return $groupes;
-    }
-
-    /**
-     * @param list<array{
-     *     nom: string,
-     *     categorie: string,
-     *     description: ?string,
-     *     lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>
-     * }> $groupes
-     *
-     * @return list<list<array{
-     *     nom: string,
-     *     categorie: string,
-     *     description: ?string,
-     *     lignes: list<array{nom: string, quantites: list<array{public: string, valeur: string}>}>
-     * }>>
-     */
-    private function groupesRecetteParPage(array $groupes): array
-    {
-        $pages = [];
-        $page = [];
-        $charge = 0.0;
-
-        foreach ($groupes as $groupe) {
-            $description = strip_tags($groupe['description'] ?? '');
-            $poids = 1.0
-                + max(0, count($groupe['lignes']) - 1) * 0.35
-                + min(4.0, mb_strlen($description) / 300);
-
-            if ([] !== $page && (count($page) >= 6 || $charge + $poids > 6.0)) {
-                $pages[] = $page;
-                $page = [];
-                $charge = 0.0;
-            }
-
-            $page[] = $groupe;
-            $charge += $poids;
-        }
-
-        if ([] !== $page) {
-            $pages[] = $page;
-        }
-
-        return $pages;
-    }
-
-    /**
-     * @param array<string, true>|null $codesPublics
-     *
-     * @return array{nom: string, quantites: list<array{public: string, valeur: string}>}
-     */
-    private function ligne(MenuDenree $ligne, ?array $codesPublics): array
-    {
-        $quantites = [];
-        /** @var MenuDenreeQuantite $quantite */
-        foreach ($ligne->getQuantites() as $quantite) {
-            $public = $quantite->getPublicCible();
-            if (null !== $codesPublics && !isset($codesPublics[$public->getCode()])) {
-                continue;
-            }
-            $quantites[] = [
-                'ordre' => $public->getOrdre(),
-                'public' => $public->getLibelle(),
-                'valeur' => $this->affichageQuantite->parPersonne($quantite->getQuantiteIndividuelle()).' '.$ligne->getConditionnement()->getSymbole().'/pers.',
-            ];
-        }
-        usort($quantites, static fn (array $a, array $b): int => $a['ordre'] <=> $b['ordre']);
-
-        return [
-            'nom' => $ligne->getDenree()->getNom().(null === $ligne->getRegime() ? '' : ' - '.$ligne->getRegime()->libelle()),
-            'quantites' => array_map(static fn (array $quantite): array => [
-                'public' => $quantite['public'],
-                'valeur' => $quantite['valeur'],
-            ], $quantites),
-        ];
-    }
-
-    /**
-     * @param list<Groupe> $groupes
-     *
-     * @return array<string, true>|null
-     */
-    private function codesPublics(array $groupes): ?array
-    {
-        if ([] === $groupes) {
-            return null;
-        }
-
-        $codes = [];
-        foreach ($groupes as $groupe) {
-            $code = mb_strtoupper(str_replace('-', '_', trim($groupe->getType())));
-            if ('' !== $code) {
-                $codes[$code] = true;
-            }
-        }
-
-        return $codes;
     }
 
     private function footer(int $page, int $nombrePages): string

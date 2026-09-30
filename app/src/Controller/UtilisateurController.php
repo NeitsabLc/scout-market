@@ -81,6 +81,9 @@ final class UtilisateurController extends AbstractController
                 }
             }
             if ([] === $erreurs) {
+                if (!is_string($donnees['role'])) {
+                    throw new \LogicException('Le rôle validé doit être une chaîne.');
+                }
                 $creation = !$utilisateurModifie instanceof Utilisateur;
                 $utilisateur = $utilisateurModifie ?? new Utilisateur();
                 $utilisateur->setPrenom($donnees['prenom'])->setNom($donnees['nom'])->setEmail($donnees['email'])->setRole($donnees['role'])->setGroupe($groupe);

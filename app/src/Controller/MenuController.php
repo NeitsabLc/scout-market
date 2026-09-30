@@ -145,6 +145,9 @@ final class MenuController extends AbstractController
                 $erreurs[] = 'Sélectionnez un mode de distribution.';
             }
             if ([] === $erreurs) {
+                if (!$dateDebut instanceof \DateTimeImmutable || !$dateFin instanceof \DateTimeImmutable || null === $typeDistribution) {
+                    throw new \LogicException('La grille validée doit posséder une période et un mode de distribution.');
+                }
                 $grille->setLabel($label)->setDates($dateDebut, $dateFin)->setTypeDistribution($typeDistribution);
                 $entityManager->flush();
                 $this->addFlash('success', 'La grille de menus a bien été modifiée.');

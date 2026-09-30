@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset scout-market:V005-minimiser-donnees-audit splitStatements:true endDelimiter:;
+--changeset scout-market:V006-minimiser-donnees-audit splitStatements:true endDelimiter:;
 --comment: Retire les adresses e-mail des audits et anonymise les traces anciennes ou sans compte
 
 UPDATE scout_market.audit_mouvement_stock audit

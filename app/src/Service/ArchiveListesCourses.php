@@ -38,8 +38,8 @@ final class ArchiveListesCourses
         $groupes = $this->groupes->findActifs();
         $menus = $this->menus->findActifs();
         $modes = [];
-        foreach ($this->groupeRepas->findPourGroupes($groupes) as $configuration) {
-            $modes[(string) $configuration->getGroupe()->getId()][(string) $configuration->getMenu()->getId()] = $configuration->getMode();
+        foreach ($this->groupeRepas->findPourGroupes($groupes) as $configurationRepas) {
+            $modes[(string) $configurationRepas->getGroupe()->getId()][(string) $configurationRepas->getMenu()->getId()] = $configurationRepas->getMode();
         }
         $menusSpeciaux = [];
         foreach ($menus as $menu) {

@@ -11,6 +11,7 @@ use App\Entity\MenuDenree;
 use App\Entity\Unite;
 use App\Enum\RegimeAlimentaire;
 use App\Service\AffichageQuantite;
+use App\Service\GenerateurPdfHtml;
 use App\Service\ListeCoursesPdf;
 use PHPUnit\Framework\TestCase;
 
@@ -33,7 +34,7 @@ final class ListeCoursesPdfTest extends TestCase
             ->setNombreVegetariens(2)
             ->setNombreSansGluten(0);
 
-        $service = new ListeCoursesPdf('/tmp', new AffichageQuantite());
+        $service = new ListeCoursesPdf('/tmp', new GenerateurPdfHtml('/tmp'), new AffichageQuantite());
         $methode = new \ReflectionMethod($service, 'fiche');
         $fiche = $methode->invoke($service, $menu, $menu->getLibelle(), [$menu], $groupe, 'FARFADETS', 12, '#000');
         self::assertIsArray($fiche);
@@ -48,7 +49,7 @@ final class ListeCoursesPdfTest extends TestCase
     {
         $menuPlanifie = (new Menu())
             ->setDateMenu(new \DateTimeImmutable('2026-07-10'));
-        $service = new ListeCoursesPdf('/tmp', new AffichageQuantite());
+        $service = new ListeCoursesPdf('/tmp', new GenerateurPdfHtml('/tmp'), new AffichageQuantite());
         $methode = new \ReflectionMethod($service, 'titre');
 
         self::assertSame('Vendredi 10/07 - pique-nique 1', $methode->invoke($service, $menuPlanifie, 'Pique-nique 1'));
