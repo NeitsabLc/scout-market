@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: V004__description_recette.sql
       relativeToChangelogFile: true
+  - include:
+      file: V005__minimiser_donnees_audit.sql
+      relativeToChangelogFile: true

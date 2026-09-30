@@ -516,6 +516,8 @@ body.app-shell { padding-left: 14.5rem; }
 .sidebar__brand-identity small { margin-top: .08rem; color: #b8cfdb; font-size: .68rem; font-weight: 400; line-height: 1.15; }
 .sidebar__brand button { width: 2rem; height: 2rem; border: 0; background: rgb(255 255 255 / 8%); font-size: 1.45rem; }
 .sidebar__nav { gap: .3rem; padding: 1.25rem 0; }
+.sidebar__guide-download { margin-top: auto; border: 1px solid rgb(101 188 153 / 55%); color: #fff; background: rgb(101 188 153 / 14%); }
+.sidebar__guide-download:hover { border-color: var(--sgdf-mint); color: #fff; background: rgb(101 188 153 / 24%); }
 .sidebar__link,
 .sidebar__section summary {
     min-height: 2.85rem;

@@ -1,3 +1,37 @@
 {% extends 'base.html.twig' %}
 {% block title %}Conditions d’utilisation | Scout Market{% endblock %}
-{% block body %}<main class="legal-page"><article><h1>Conditions d’utilisation</h1><p>Scout Market est un outil d’intendance destiné aux équipes et unités participantes des Scouts et Guides de France à Jambville.</p><h2>Utilisation</h2><p>Chaque utilisateur protège ses accès et utilise les données de fournisseurs, denrées, recettes, menus, stocks, commandes et distributions uniquement pour les besoins de l’intendance.</p><h2>Données</h2><p>Les utilisateurs veillent à l’exactitude des informations saisies, limitent les coordonnées fournisseurs aux contacts professionnels nécessaires et signalent toute anomalie aux administrateurs. Les règles de conservation et les droits des personnes sont décrits dans la <a href="{{ path('app_politique_confidentialite') }}">politique de confidentialité</a>.</p><h2>Sécurité</h2><p>Tout accès non autorisé ou usage détourné est interdit. Un compte peut être désactivé lorsque son accès n’est plus nécessaire ; il est supprimé automatiquement un mois plus tard s’il n’est pas réactivé.</p></article></main>{% endblock %}
+{% block body %}
+<main class="legal-page">
+    <article>
+        <h1>Conditions d’utilisation</h1>
+        <p>Dernière mise à jour : 30 septembre 2026.</p>
+        <p>Scout Market est un outil d’intendance destiné aux équipes et unités participantes des Scouts et Guides de France à Jambville. Son utilisation implique le respect des présentes conditions.</p>
+
+        <h2>1. Exploitant et contact</h2>
+        <p>L’identification juridique complète de l’exploitant et responsable de publication est en cours de formalisation. Dans l’attente, toute question relative au service peut être adressée à <a href="mailto:contact@neitsab.net">contact@neitsab.net</a>. L’application et sa base de données sont hébergées sur l’infrastructure personnelle de l’exploitant.</p>
+
+        <h2>2. Accès au service</h2>
+        <p>Les fonctions de gestion sont accessibles au moyen d’un compte nominatif attribué selon la mission de l’utilisateur : administrateur, gestionnaire ou responsable d’unité. Chaque utilisateur protège ses accès, ne les partage pas et signale sans délai toute suspicion de compromission.</p>
+        <p>La saisie d’une distribution peut être ouverte sans compte au moyen d’un lien ou d’un QR code temporairement activé. Ce lien est réservé aux personnes autorisées par l’équipe d’intendance et ne doit pas être diffusé publiquement.</p>
+
+        <h2>3. Utilisation autorisée</h2>
+        <p>Les données de fournisseurs, denrées, recettes, menus, unités, stocks, commandes et distributions sont utilisées uniquement pour les besoins de l’intendance. Les utilisateurs veillent à l’exactitude des informations saisies, limitent les coordonnées fournisseurs aux contacts professionnels nécessaires et n’inscrivent aucune donnée personnelle dans les motifs d’audit.</p>
+        <p>Tout accès non autorisé, contournement des droits, altération volontaire, extraction injustifiée ou usage détourné est interdit.</p>
+
+        <h2>4. Traçabilité et données personnelles</h2>
+        <p>Les modifications et annulations de mouvements de stock sont journalisées. L’identité de leur auteur est anonymisée lors de la suppression du compte et au plus tard un an après l’opération. Les autres règles de conservation et les droits des personnes sont décrits dans la <a href="{{ path('app_politique_confidentialite') }}">politique de confidentialité</a>.</p>
+
+        <h2>5. Disponibilité et maintenance</h2>
+        <p>Le service est fourni pour faciliter l’organisation de l’intendance. Des interruptions peuvent être nécessaires pour la maintenance, la sécurité ou la correction d’un incident. Les utilisateurs conservent la responsabilité de vérifier les quantités, commandes et documents exportés avant leur utilisation opérationnelle.</p>
+
+        <h2>6. Suspension et suppression des comptes</h2>
+        <p>Un compte peut être désactivé lorsque son accès n’est plus nécessaire, en cas de risque de sécurité ou de non-respect des présentes conditions. Il est supprimé automatiquement un mois après sa désactivation s’il n’est pas réactivé.</p>
+
+        <h2>7. Propriété intellectuelle</h2>
+        <p>Le code source de Scout Market est distribué sous licence Apache 2.0. Les noms, marques et éléments graphiques de tiers, notamment ceux des Scouts et Guides de France, restent soumis aux droits de leurs titulaires respectifs.</p>
+
+        <h2>8. Évolution des conditions</h2>
+        <p>Ces conditions peuvent être mises à jour pour refléter l’évolution du service, de son organisation ou des exigences de sécurité. La date affichée en haut de cette page identifie la version en vigueur.</p>
+    </article>
+</main>
+{% endblock %}

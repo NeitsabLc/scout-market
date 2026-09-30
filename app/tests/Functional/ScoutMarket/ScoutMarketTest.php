@@ -36,6 +36,8 @@ final class ScoutMarketTest extends WebTestCase
         self::assertSelectorTextContains('.sidebar__nav', 'Commande');
         self::assertSelectorTextContains('.sidebar__nav', 'Unités participantes');
         self::assertSelectorTextContains('.sidebar__nav', 'Utilisateurs');
+        self::assertSelectorExists('.sidebar__guide-download[download="guide-utilisateur-scout-market.pdf"][href*="guide-utilisateur-scout-market"][href$=".pdf"]');
+        self::assertFileExists(dirname(__DIR__, 3).'/assets/documents/guide-utilisateur-scout-market.pdf');
         self::assertSelectorTextNotContains('body', 'Séjour actif');
         self::assertSelectorTextContains('.home-kpis--summary', 'recettes actives');
         self::assertSelectorExists('.home-kpis--summary a[href="/recettes"]');

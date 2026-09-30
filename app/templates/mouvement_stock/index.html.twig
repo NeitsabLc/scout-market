@@ -42,7 +42,7 @@
             </section>
 
             {% if mouvementExistant %}
-                <section class="stock-movement-card food-form-card"><h2>Traçabilité</h2><label>Motif de la modification <b>*</b><textarea name="motif_audit" maxlength="1000" rows="3" required>{{ motifAudit }}</textarea><small>L’état avant et après, votre identité et la date seront conservés dans l’historique d’audit.</small></label></section>
+                <section class="stock-movement-card food-form-card"><h2>Traçabilité</h2><label>Motif de la modification <b>*</b><textarea name="motif_audit" maxlength="1000" rows="3" required>{{ motifAudit }}</textarea><small>L’état avant et après, votre nom et la date sont conservés dans l’historique. Votre identité est anonymisée au plus tard après un an. N’indiquez aucune donnée personnelle dans le motif.</small></label></section>
             {% endif %}
 
             <template data-stock-movement-target="lineTemplate">{% include 'mouvement_stock/_ligne.html.twig' with {index: '__INDEX__', ligneValeurs: {}, modifiable: false} %}</template>

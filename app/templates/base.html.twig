@@ -91,6 +91,11 @@
                     </nav>
                 </div>
             </details>
+
+            <a class="sidebar__link sidebar__guide-download" href="{{ asset('documents/guide-utilisateur-scout-market.pdf') }}" download="guide-utilisateur-scout-market.pdf" title="Télécharger le guide utilisateur PDF">
+                <span class="sidebar__icon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"/></svg></span>
+                <span class="sidebar__text">Guide utilisateur</span>
+            </a>
         {% endif %}
     </nav>
     <nav class="sidebar__legal-mobile" aria-label="Informations légales"><span>Version {{ app_version }}</span><a href="{{ path('app_conditions_utilisation') }}">Conditions d’utilisation</a><a href="{{ path('app_politique_confidentialite') }}">Politique de confidentialité</a></nav>

@@ -15,9 +15,12 @@ final class InformationsLegalesControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Politique de confidentialité');
+        self::assertSelectorTextContains('.legal-page', '30 septembre 2026');
+        self::assertSelectorTextContains('.legal-page', 'identification juridique complète du responsable du traitement est en cours de formalisation');
         self::assertSelectorTextContains('.legal-page', 'un mois après leur désactivation');
         self::assertSelectorTextContains('.legal-page', '31 août');
-        self::assertSelectorTextContains('.legal-page', 'Mouvements de stock et audits');
+        self::assertSelectorTextContains('.legal-page', 'nom de l’auteur conservé au maximum un an');
+        self::assertSelectorTextContains('.legal-page', 'deux ans d’inactivité');
         self::assertSelectorExists('a[href="mailto:contact@neitsab.net"]');
     }
 
@@ -28,6 +31,8 @@ final class InformationsLegalesControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Conditions d’utilisation');
+        self::assertSelectorTextContains('.legal-page', 'lien ou d’un QR code');
+        self::assertSelectorTextContains('.legal-page', 'licence Apache 2.0');
         self::assertSelectorExists('a[href="/politique-confidentialite"]');
     }
 }

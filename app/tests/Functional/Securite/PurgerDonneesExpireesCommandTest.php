@@ -12,7 +12,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class PurgerDonneesExpireesCommandTest extends KernelTestCase
 {
-    public function testLaCommandeAppliqueLesDureesSansSupprimerMouvementsNiAudits(): void
+    public function testLaCommandeAppliqueLesDureesEtAnonymiseLesDonneesPersonnelles(): void
     {
         self::bootKernel();
         $connexion = static::getContainer()->get(Connection::class);
@@ -22,6 +22,7 @@ final class PurgerDonneesExpireesCommandTest extends KernelTestCase
         $groupeId = null;
         $mouvementId = null;
         $auditId = null;
+        $fournisseurId = null;
 
         try {
             $groupeId = (string) $connexion->fetchOne(
@@ -56,7 +57,15 @@ final class PurgerDonneesExpireesCommandTest extends KernelTestCase
                     INSERT INTO scout_market.audit_mouvement_stock (
                         mouvement_stock_id, utilisateur_id, utilisateur_libelle,
                         action, motif, etat_avant, etat_apres
-                    ) VALUES (:mouvement, :utilisateur, :libelle, 'MODIFICATION', 'Test RGPD', '{}'::jsonb, '{}'::jsonb)
+                    ) VALUES (
+                        :mouvement,
+                        :utilisateur,
+                        :libelle,
+                        'MODIFICATION',
+                        'Test RGPD',
+                        jsonb_build_object('mouvement', jsonb_build_object('utilisateur_id', CAST(:utilisateur AS text))),
+                        jsonb_build_object('mouvement', jsonb_build_object('annule_par_id', CAST(:utilisateur AS text)))
+                    )
                     RETURNING id
                     SQL,
                 [
@@ -64,6 +73,18 @@ final class PurgerDonneesExpireesCommandTest extends KernelTestCase
                     'utilisateur' => $utilisateurExpire,
                     'libelle' => 'Personne Test <'.$emailExpire.'>',
                 ],
+            );
+            $fournisseurId = (string) $connexion->fetchOne(
+                <<<'SQL'
+                    INSERT INTO scout_market.fournisseur (
+                        nom, telephone, email, adresse, actif, created_at, updated_at
+                    ) VALUES (
+                        :nom, '0102030405', :email, 'Adresse de test', FALSE,
+                        '2024-01-01 00:00:00+00', '2024-01-01 00:00:00+00'
+                    )
+                    RETURNING id
+                    SQL,
+                ['nom' => 'Fournisseur RGPD '.$suffixe, 'email' => 'fournisseur-'.$suffixe.'@example.test'],
             );
 
             $application = new Application(self::$kernel);
@@ -89,20 +110,36 @@ final class PurgerDonneesExpireesCommandTest extends KernelTestCase
             self::assertSame('saisie-consommation@scout-market.local', $mouvement['email']);
 
             $audit = $connexion->fetchAssociative(
-                'SELECT utilisateur_id, utilisateur_libelle FROM scout_market.audit_mouvement_stock WHERE id = :id',
+                'SELECT utilisateur_id, utilisateur_libelle, etat_avant, etat_apres FROM scout_market.audit_mouvement_stock WHERE id = :id',
                 ['id' => $auditId],
             );
             self::assertIsArray($audit);
             self::assertNull($audit['utilisateur_id']);
-            self::assertStringContainsString($emailExpire, (string) $audit['utilisateur_libelle']);
+            self::assertSame('Utilisateur anonymisé', $audit['utilisateur_libelle']);
+            self::assertSame(['mouvement' => []], json_decode((string) $audit['etat_avant'], true, 512, JSON_THROW_ON_ERROR));
+            self::assertSame(['mouvement' => []], json_decode((string) $audit['etat_apres'], true, 512, JSON_THROW_ON_ERROR));
+
+            $fournisseur = $connexion->fetchAssociative(
+                'SELECT telephone, email, adresse FROM scout_market.fournisseur WHERE id = :id',
+                ['id' => $fournisseurId],
+            );
+            self::assertIsArray($fournisseur);
+            self::assertNull($fournisseur['telephone']);
+            self::assertNull($fournisseur['email']);
+            self::assertNull($fournisseur['adresse']);
             self::assertStringContainsString('1 unité(s) supprimée(s)', $testeur->getDisplay());
             self::assertStringContainsString('1 compte(s) supprimé(s)', $testeur->getDisplay());
+            self::assertStringContainsString('1 audit(s) anonymisé(s)', $testeur->getDisplay());
+            self::assertStringContainsString('1 fournisseur(s) sans coordonnées', $testeur->getDisplay());
         } finally {
             if (null !== $auditId) {
                 $connexion->executeStatement('DELETE FROM scout_market.audit_mouvement_stock WHERE id = :id', ['id' => $auditId]);
             }
             if (null !== $mouvementId) {
                 $connexion->executeStatement('DELETE FROM scout_market.mouvement_stock WHERE id = :id', ['id' => $mouvementId]);
+            }
+            if (null !== $fournisseurId) {
+                $connexion->executeStatement('DELETE FROM scout_market.fournisseur WHERE id = :id', ['id' => $fournisseurId]);
             }
             $connexion->executeStatement(
                 'DELETE FROM scout_market.utilisateur WHERE email IN (:expire, :recent)',
