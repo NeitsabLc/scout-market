@@ -6,6 +6,7 @@ namespace App\Tests\Unit\Service;
 
 use App\Entity\Denree;
 use App\Entity\GrilleMenu;
+use App\Entity\Groupe;
 use App\Entity\Menu;
 use App\Entity\Unite;
 use App\Enum\TypeDenree;
@@ -143,5 +144,57 @@ final class CalculCommandeFinaleTest extends TestCase
         self::assertSame(4.0, $resultat[0]['besoin']);
         self::assertSame(10.0, $resultat[0]['stock_previsionnel']);
         self::assertSame(0.0, $resultat[0]['quantite_commande']);
+    }
+
+    public function testElleConserveLesQuantitesJournalieresParUnite(): void
+    {
+        $date = new \DateTimeImmutable('2026-08-14');
+        $piece = new Unite('pièce', 'pc');
+        $pain = (new Denree())->setNom('Pain')->setUniteReference($piece)->setUniteInventaire($piece);
+        $grille = new GrilleMenu('Principale', $date, $date->modify('+1 day'));
+        $alpha = (new Groupe())->setNom('Alpha');
+        $bravo = (new Groupe())->setNom('Bravo');
+        $ligne = static fn (float $quantite): array => [
+            'denree' => $pain,
+            'regime' => null,
+            'quantite' => $quantite,
+            'unite' => $piece,
+        ];
+        $commandes = [];
+        foreach ([
+            [$date, [[$alpha, 4.0], [$bravo, 6.0]]],
+            [$date->modify('+1 day'), [[$alpha, 5.0]]],
+        ] as [$dateMenu, $quantites]) {
+            $menu = (new Menu())->setGrilleMenu($grille)->setDateMenu($dateMenu);
+            $unites = [];
+            $total = 0.0;
+            foreach ($quantites as [$groupe, $quantite]) {
+                $unites[] = ['groupe' => $groupe, 'lignes' => [$ligne($quantite)]];
+                $total += $quantite;
+            }
+            $commandes[] = [
+                'menu' => $menu,
+                'lignes' => [$ligne($total)],
+                'grilles' => [[
+                    'grille' => $grille,
+                    'menu' => $menu,
+                    'lignes' => [$ligne($total)],
+                    'unites' => $unites,
+                ]],
+            ];
+        }
+        $conversion = (new \ReflectionClass(ConversionConditionnement::class))->newInstanceWithoutConstructor();
+
+        $resultat = (new CalculCommandeFinale($conversion))->calculer($commandes, [], [], 0, 0, 1);
+
+        self::assertSame(15.0, $resultat[0]['besoin']);
+        self::assertCount(2, $resultat[0]['quantites_journalieres']);
+        self::assertSame('2026-08-14', $resultat[0]['quantites_journalieres'][0]['date']->format('Y-m-d'));
+        self::assertSame(['Alpha', 'Bravo'], array_map(
+            static fn (array $unite): string => $unite['groupe']->getNom(),
+            $resultat[0]['quantites_journalieres'][0]['unites'],
+        ));
+        self::assertSame([4.0, 6.0], array_column($resultat[0]['quantites_journalieres'][0]['unites'], 'quantite'));
+        self::assertSame([5.0], array_column($resultat[0]['quantites_journalieres'][1]['unites'], 'quantite'));
     }
 }
