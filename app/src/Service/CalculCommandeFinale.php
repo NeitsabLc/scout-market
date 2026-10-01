@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Denree;
+use App\Entity\Groupe;
 use App\Entity\ReferenceFournisseurConditionnement;
 use App\Enum\TypeDenree;
 use App\Enum\TypeDistributionMenu;
@@ -16,11 +17,22 @@ final class CalculCommandeFinale
     }
 
     /**
-     * @param list<array{menu: \App\Entity\Menu, lignes: list<array{denree: Denree, regime: ?\App\Enum\RegimeAlimentaire, quantite: float, unite: \App\Entity\Unite}>}> $commandes
-     * @param array<string, array{entrees: float, sorties: float}>                                                                                                      $stocksActuels
-     * @param list<ReferenceFournisseurConditionnement>                                                                                                                 $niveaux
+     * @param list<array{
+     *     menu: \App\Entity\Menu,
+     *     lignes: list<array{denree: Denree, regime: ?\App\Enum\RegimeAlimentaire, quantite: float, unite: \App\Entity\Unite}>,
+     *     grilles?: list<array<string, mixed>>
+     * }> $commandes
+     * @param array<string, array{entrees: float, sorties: float}> $stocksActuels
+     * @param list<ReferenceFournisseurConditionnement>            $niveaux
      *
-     * @return list<array{denree: Denree, besoin: float, stock_previsionnel: float, quantite_commande: float, unite: \App\Entity\Unite}>
+     * @return list<array{
+     *     denree: Denree,
+     *     besoin: float,
+     *     stock_previsionnel: float,
+     *     quantite_commande: float,
+     *     unite: \App\Entity\Unite,
+     *     quantites_journalieres: list<array{date: \DateTimeImmutable, unites: list<array{groupe: Groupe, quantite: float}>}>
+     * }>
      */
     public function calculer(
         array $commandes,
@@ -57,8 +69,14 @@ final class CalculCommandeFinale
             $niveaux,
             $secEnCaisseDejaLivre,
         );
+        $commandesPeriode = array_slice($commandes, $premierRepasCommande, $dernierRepasCommande - $premierRepasCommande + 1);
         $besoinsPeriode = $this->agreger(
-            array_slice($commandes, $premierRepasCommande, $dernierRepasCommande - $premierRepasCommande + 1),
+            $commandesPeriode,
+            $niveaux,
+            $secEnCaisseDejaLivre,
+        );
+        $quantitesJournalieres = $this->quantitesJournalieresParUnite(
+            $commandesPeriode,
             $niveaux,
             $secEnCaisseDejaLivre,
         );
@@ -75,6 +93,7 @@ final class CalculCommandeFinale
                 'stock_previsionnel' => $this->normaliser($stockPrevisionnel),
                 'quantite_commande' => $this->normaliser($quantiteCommande),
                 'unite' => $denree->getUniteInventaire(),
+                'quantites_journalieres' => $quantitesJournalieres[$denreeId] ?? [],
             ];
         }
         usort($resultat, static fn (array $a, array $b): int => strnatcasecmp($a['denree']->getNom(), $b['denree']->getNom()));
@@ -107,6 +126,66 @@ final class CalculCommandeFinale
         }
 
         return $besoins;
+    }
+
+    /**
+     * @param list<array{menu: \App\Entity\Menu, grilles?: list<array<string, mixed>>}> $commandes
+     * @param list<ReferenceFournisseurConditionnement>                                 $niveaux
+     *
+     * @return array<string, list<array{date: \DateTimeImmutable, unites: list<array{groupe: Groupe, quantite: float}>}>>
+     */
+    private function quantitesJournalieresParUnite(array $commandes, array $niveaux, bool $secEnCaisseDejaLivre): array
+    {
+        /** @var array<string, array<string, array{date: \DateTimeImmutable, unites: array<string, array{groupe: Groupe, quantite: float}>}>> $quantites */
+        $quantites = [];
+        foreach ($commandes as $commande) {
+            $date = $commande['menu']->getDateMenu();
+            if (null === $date) {
+                continue;
+            }
+            $cleDate = $date->format('Y-m-d');
+            foreach ($commande['grilles'] ?? [] as $grille) {
+                $secDejaLivre = $secEnCaisseDejaLivre
+                    && TypeDistributionMenu::EN_CAISSE === $grille['grille']->getTypeDistribution();
+                foreach ($grille['unites'] ?? [] as $unite) {
+                    /** @var Groupe $groupe */
+                    $groupe = $unite['groupe'];
+                    $cleGroupe = (string) $groupe->getId();
+                    foreach ($unite['lignes'] as $ligne) {
+                        $denree = $ligne['denree'];
+                        if ($secDejaLivre && TypeDenree::SEC === $denree->getType()) {
+                            continue;
+                        }
+                        $cleDenree = (string) $denree->getId();
+                        $quantites[$cleDenree][$cleDate] ??= ['date' => $date, 'unites' => []];
+                        $quantites[$cleDenree][$cleDate]['unites'][$cleGroupe] ??= ['groupe' => $groupe, 'quantite' => 0.0];
+                        $quantites[$cleDenree][$cleDate]['unites'][$cleGroupe]['quantite'] += $this->conversion->convertirAvecNiveaux(
+                            $denree,
+                            $ligne['unite'],
+                            $denree->getUniteInventaire(),
+                            $ligne['quantite'],
+                            $niveaux,
+                        );
+                    }
+                }
+            }
+        }
+
+        $resultat = [];
+        foreach ($quantites as $cleDenree => $jours) {
+            ksort($jours);
+            foreach ($jours as $jour) {
+                $unites = array_values($jour['unites']);
+                usort($unites, static fn (array $a, array $b): int => strnatcasecmp($a['groupe']->getNom(), $b['groupe']->getNom()));
+                foreach ($unites as &$unite) {
+                    $unite['quantite'] = $this->normaliser($unite['quantite']);
+                }
+                unset($unite);
+                $resultat[$cleDenree][] = ['date' => $jour['date'], 'unites' => $unites];
+            }
+        }
+
+        return $resultat;
     }
 
     /**

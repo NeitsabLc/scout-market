@@ -12,10 +12,30 @@ use App\Entity\Unite;
 final class RegroupementCommandeFournisseur
 {
     /**
-     * @param list<array{denree: Denree, besoin: float, stock_previsionnel: float, quantite_commande: float, unite: Unite}> $commande
-     * @param list<ReferenceFournisseur>                                                                                    $references
+     * @param list<array{
+     *     denree: Denree,
+     *     besoin: float,
+     *     stock_previsionnel: float,
+     *     quantite_commande: float,
+     *     unite: Unite,
+     *     quantites_journalieres: list<array{date: \DateTimeImmutable, unites: list<array{groupe: \App\Entity\Groupe, quantite: float}>}>
+     * }> $commande
+     * @param list<ReferenceFournisseur> $references
      *
-     * @return list<array{nom: string, type: string, lignes: list<array{denree: Denree, besoin: float, stock_previsionnel: float, quantite_commande: float, unite: Unite, fournisseurs: list<Fournisseur>, references_produit: list<string>}>}>
+     * @return list<array{
+     *     nom: string,
+     *     type: string,
+     *     lignes: list<array{
+     *         denree: Denree,
+     *         besoin: float,
+     *         stock_previsionnel: float,
+     *         quantite_commande: float,
+     *         unite: Unite,
+     *         quantites_journalieres: list<array{date: \DateTimeImmutable, unites: list<array{groupe: \App\Entity\Groupe, quantite: float}>}>,
+     *         fournisseurs: list<Fournisseur>,
+     *         references_produit: list<string>
+     *     }>
+     * }>
      */
     public function regrouper(array $commande, array $references): array
     {

@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\Denree;
 use App\Entity\Fournisseur;
+use App\Entity\Groupe;
 use App\Entity\Unite;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 
@@ -30,6 +31,7 @@ final class ExportCommandeExcel
      *         stock_previsionnel: float,
      *         quantite_commande: float,
      *         unite: Unite,
+     *         quantites_journalieres?: list<array{date: \DateTimeImmutable, unites: list<array{groupe: Groupe, quantite: float}>}>,
      *         fournisseurs: list<Fournisseur>,
      *         references_produit: list<string>
      *     }>
@@ -53,7 +55,8 @@ final class ExportCommandeExcel
             $nomsUtilises = [];
             foreach ($groupes as $groupe) {
                 $nom = $this->nomFichier($groupe['nom'], $nomsUtilises);
-                if (!$archive->addFromString($nom, $this->creerClasseur($groupe['nom'], $groupe['lignes']))) {
+                $boulanger = 'fournisseur' === $groupe['type'] && 'boulanger' === $this->slug($groupe['nom']);
+                if (!$archive->addFromString($nom, $this->creerClasseur($groupe['nom'], $groupe['lignes'], $boulanger))) {
                     throw new \RuntimeException('Impossible d’ajouter un classeur à l’archive.');
                 }
             }
@@ -83,11 +86,12 @@ final class ExportCommandeExcel
      *     stock_previsionnel: float,
      *     quantite_commande: float,
      *     unite: Unite,
+     *     quantites_journalieres?: list<array{date: \DateTimeImmutable, unites: list<array{groupe: Groupe, quantite: float}>}>,
      *     fournisseurs: list<Fournisseur>,
      *     references_produit: list<string>
      * }> $lignes
      */
-    private function creerClasseur(string $fournisseur, array $lignes): string
+    private function creerClasseur(string $fournisseur, array $lignes, bool $boulanger): string
     {
         $chemin = $this->fichierTemporaire();
         $classeur = new \ZipArchive();
@@ -106,7 +110,7 @@ final class ExportCommandeExcel
                 'xl/workbook.xml' => $this->classeurXml($fournisseur),
                 'xl/_rels/workbook.xml.rels' => $this->relationsClasseur(),
                 'xl/styles.xml' => $this->styles(),
-                'xl/worksheets/sheet1.xml' => $this->feuille($lignes),
+                'xl/worksheets/sheet1.xml' => $boulanger ? $this->feuilleBoulanger($lignes) : $this->feuille($lignes),
             ];
             foreach ($fichiers as $nom => $contenu) {
                 if (!$classeur->addFromString($nom, $contenu)) {
@@ -167,12 +171,99 @@ final class ExportCommandeExcel
             .'</worksheet>';
     }
 
+    /**
+     * @param list<array{
+     *     denree: Denree,
+     *     unite: Unite,
+     *     quantites_journalieres?: list<array{date: \DateTimeImmutable, unites: list<array{groupe: Groupe, quantite: float}>}>,
+     *     references_produit: list<string>
+     * }> $lignes
+     */
+    private function feuilleBoulanger(array $lignes): string
+    {
+        /** @var array<string, Groupe> $unites */
+        $unites = [];
+        /** @var array<string, array{date: \DateTimeImmutable, lignes: list<array{ligne: array<string, mixed>, quantites: array<string, float>}>}> $jours */
+        $jours = [];
+        foreach ($lignes as $ligne) {
+            foreach ($ligne['quantites_journalieres'] ?? [] as $jour) {
+                $cleDate = $jour['date']->format('Y-m-d');
+                $quantites = [];
+                foreach ($jour['unites'] as $unite) {
+                    $cleUnite = (string) $unite['groupe']->getId();
+                    $unites[$cleUnite] = $unite['groupe'];
+                    $quantites[$cleUnite] = ($quantites[$cleUnite] ?? 0.0) + $unite['quantite'];
+                }
+                $jours[$cleDate] ??= ['date' => $jour['date'], 'lignes' => []];
+                $jours[$cleDate]['lignes'][] = ['ligne' => $ligne, 'quantites' => $quantites];
+            }
+        }
+
+        uasort($unites, static fn (Groupe $a, Groupe $b): int => strnatcasecmp($a->getNom(), $b->getNom()));
+        ksort($jours);
+        $entetes = ['Denrée', 'Référence', 'Conditionnement'];
+        foreach ($unites as $unite) {
+            $entetes[] = $unite->getNom();
+        }
+        $entetes[] = 'Total';
+
+        $numero = 1;
+        $lignesXml = [];
+        $fusions = [];
+        $derniereColonne = $this->colonne(count($entetes));
+        foreach ($jours as $jour) {
+            if ([] !== $lignesXml) {
+                $lignesXml[] = sprintf('<row r="%d"/>', $numero++);
+            }
+            $lignesXml[] = $this->ligneXml($numero, ['Commande du '.$jour['date']->format('d/m/Y')], true);
+            $fusions[] = sprintf('<mergeCell ref="A%d:%s%d"/>', $numero, $derniereColonne, $numero);
+            ++$numero;
+            $lignesXml[] = $this->ligneXml($numero++, $entetes, true);
+
+            usort($jour['lignes'], static fn (array $a, array $b): int => strnatcasecmp($a['ligne']['denree']->getNom(), $b['ligne']['denree']->getNom()));
+            foreach ($jour['lignes'] as $detail) {
+                $ligne = $detail['ligne'];
+                $valeurs = [
+                    $ligne['denree']->getNom(),
+                    implode(', ', $ligne['references_produit']),
+                    sprintf('%s (%s)', $ligne['unite']->getNom(), $ligne['unite']->getSymbole()),
+                ];
+                $total = 0.0;
+                foreach ($unites as $cleUnite => $unite) {
+                    $quantite = $detail['quantites'][$cleUnite] ?? 0.0;
+                    $valeurs[] = $quantite;
+                    $total += $quantite;
+                }
+                $valeurs[] = $total;
+                $lignesXml[] = $this->ligneXml($numero++, $valeurs);
+            }
+        }
+
+        if ([] === $jours) {
+            $lignesXml[] = $this->ligneXml(1, ['Aucun détail journalier disponible.']);
+        }
+        $colonnesUnites = count($unites);
+        $colonnes = '<col min="1" max="1" width="32" customWidth="1"/><col min="2" max="2" width="22" customWidth="1"/><col min="3" max="3" width="25" customWidth="1"/>';
+        if ($colonnesUnites > 0) {
+            $colonnes .= sprintf('<col min="4" max="%d" width="18" customWidth="1"/>', 3 + $colonnesUnites);
+        }
+        $colonnes .= sprintf('<col min="%d" max="%d" width="18" customWidth="1"/>', 4 + $colonnesUnites, 4 + $colonnesUnites);
+        $fusionXml = [] === $fusions ? '' : sprintf('<mergeCells count="%d">%s</mergeCells>', count($fusions), implode('', $fusions));
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            .'<cols>'.$colonnes.'</cols>'
+            .'<sheetData>'.implode('', $lignesXml).'</sheetData>'
+            .$fusionXml
+            .'</worksheet>';
+    }
+
     /** @param list<string|float> $valeurs */
     private function ligneXml(int $numero, array $valeurs, bool $entete = false): string
     {
         $cellules = '';
         foreach ($valeurs as $index => $valeur) {
-            $reference = chr(65 + $index).$numero;
+            $reference = $this->colonne($index + 1).$numero;
             if (is_float($valeur)) {
                 $cellules .= sprintf('<c r="%s" s="2"><v>%s</v></c>', $reference, $this->nombre($valeur));
                 continue;
@@ -203,7 +294,7 @@ final class ExportCommandeExcel
     /** @param array<string, true> $nomsUtilises */
     private function nomFichier(string $fournisseur, array &$nomsUtilises): string
     {
-        $base = (new AsciiSlugger('fr'))->slug($fournisseur)->lower()->toString();
+        $base = $this->slug($fournisseur);
         $base = '' === $base ? 'sans-fournisseur' : $base;
         $nom = 'commande-'.$base;
         $suffixe = 2;
@@ -214,6 +305,23 @@ final class ExportCommandeExcel
         $nomsUtilises[$nom] = true;
 
         return $nom.'.xlsx';
+    }
+
+    private function slug(string $valeur): string
+    {
+        return (new AsciiSlugger('fr'))->slug($valeur)->lower()->toString();
+    }
+
+    private function colonne(int $numero): string
+    {
+        $colonne = '';
+        while ($numero > 0) {
+            --$numero;
+            $colonne = chr(65 + ($numero % 26)).$colonne;
+            $numero = intdiv($numero, 26);
+        }
+
+        return $colonne;
     }
 
     private function nomFeuille(string $nom): string
