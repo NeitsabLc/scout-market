@@ -11,6 +11,16 @@ if [ "$#" -eq 0 ]; then
     exit 1
 fi
 
+# L’image et les paquets doivent fournir la même révision des navigateurs.
+playwright_version=$(node -p "require('./node_modules/playwright-core/package.json').version")
+case "$PLAYWRIGHT_IMAGE" in
+    "mcr.microsoft.com/playwright:v${playwright_version}-noble@sha256:"*) ;;
+    *)
+        echo "PLAYWRIGHT_IMAGE doit correspondre à Playwright ${playwright_version}, avec un digest." >&2
+        exit 1
+        ;;
+esac
+
 docker_bin="$(realpath "$(command -v docker)")"
 compose_plugin="$(
     docker info --format '{{range .ClientInfo.Plugins}}{{if eq .Name "compose"}}{{.Path}}{{end}}{{end}}'
