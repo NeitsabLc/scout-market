@@ -5,7 +5,7 @@ set -eu
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 sql_file="$script_dir/import.sql"
 mode=controle
-host=web01
+host=${SCOUT_MARKET_SSH_HOST:-}
 container=scout-market-database-1
 
 usage() {
@@ -24,6 +24,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -r "$sql_file" ] || { echo "Script SQL introuvable : $sql_file" >&2; exit 1; }
+[ -n "$host" ] || { echo "Hôte requis : --host HOTE ou SCOUT_MARKET_SSH_HOST." >&2; usage; exit 2; }
 command -v ssh >/dev/null 2>&1 || { echo "SSH est requis." >&2; exit 1; }
 
 if [ "$mode" = application ]; then
