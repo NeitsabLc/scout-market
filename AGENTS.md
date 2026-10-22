@@ -1,66 +1,69 @@
-# Contexte du projet Scout Market
+# Scout Market
 
-## Produit et architecture
+Gestion quotidienne de l’intendance de Jambville : catalogue, menus, unités, stocks, distributions et commandes.
 
-Scout Market est l’application de gestion quotidienne du Scout Market de
-Jambville : catalogue, recettes, menus, unités, stocks, distributions et
-commandes.
+## Stack
 
-- application Symfony 8.1 / PHP 8.4 dans `app/` ;
-- PostgreSQL 18, avec Liquibase comme unique source de vérité du schéma ;
-- rendu Twig, Symfony UX Turbo et AssetMapper ;
-- environnements et services pilotés par Docker Compose et le `Makefile` ;
-- tests PHP avec PHPUnit et tests navigateur avec Playwright/Axe ;
-- images de livraison publiées dans GHCR et déployées par digest.
+- PHP 8.4, Symfony 8.1, Doctrine et PostgreSQL 18 ; vérifier les versions exactes dans les manifestes.
+- Twig, Symfony UX/AssetMapper et Docker Compose ; npm pour Playwright/Axe.
+- Liquibase est l’unique source de vérité du schéma ; PHPUnit pour PHP.
 
-Un changeset Liquibase déjà appliqué ne doit jamais être modifié. Toute évolution
-du schéma crée un nouveau fichier versionné dans `database/changelog/` et est
-référencée par `database/changelog/db.changelog-master.yaml`.
+## Commandes depuis la racine
 
-## Forge et workflow de référence
+- Inventaire des commandes : `make help`.
+- Installation locale : préparer `.env` et `app/.env` depuis les modèles, puis `make install`.
+- Démarrer et inspecter : `make up`, `make ps` ; dépendances PHP : `make composer-install`.
+- Schéma : `make db-validate` ; SQL prévu sans application : `make db-sql` ; état : `make db-status`.
+- Mapping, style et analyse : `make doctrine-validate`, `make style`, `make analyse-statique`.
+- Tests PHP : `make test` ; cette cible recrée la base de tests dédiée.
+- Tests navigateur : `npm ci`, puis `make test-accessibility` ou `make test-e2e`.
+- Conteneurs et livraison : `make prod-config` ; smoke test selon `GITHUB_SETUP.md`.
+- Smoke test isolé : `make production-smoke`.
+- Vérification du diff : `git diff --check`.
 
-Le dépôt canonique est <https://github.com/NeitsabLc/scout-market>. `origin`
-doit pointer vers GitHub. GitLab n’est plus la forge active : ne pas y créer de
-merge request, de pipeline, de tag ou de release et ne pas réintroduire de
-configuration GitLab supprimée de `main`.
+## Architecture et conventions
 
-Les changements partent de la dernière version de `origin/main`, restent ciblés
-et sont proposés par pull request. Les titres de pull request et les commits
-suivent Conventional Commits. `main` est protégée et ne reçoit pas de push
-direct.
+- `app/src/Controller/` : orchestration HTTP ; placer les règles métier dans `app/src/Service/` et les entités.
+- `app/templates/` et `app/assets/` : interface ; `app/tests/` et `tests/` : tests PHP/navigateur.
+- `database/changelog/` : schéma ; `docker/`, `scripts/` et les fichiers Compose : exécution.
+- Suivre `CONTRIBUTING.md` et `GITHUB_SETUP.md` pour branches, PR, releases et contrôles.
+- Conserver les textes d’interface et les descriptions de commits en français, avec les préfixes Conventional Commits.
 
-GitHub Actions exécute la CI et le smoke test de production. Release Please
-prépare la pull request de version ; sa fusion crée la GitHub Release. Le workflow
-de publication construit et signe les images GHCR, vérifie leurs digests puis
-déclenche le déploiement en recette. Dependabot remplace Renovate.
+## Pièges connus
 
-Les détails d’administration sont dans `GITHUB_SETUP.md` et les règles de
-contribution dans `CONTRIBUTING.md`.
+- Ne jamais modifier un changeset Liquibase déjà appliqué ; ajouter un nouveau fichier et le référencer dans le master.
+- Ne jamais appliquer `doctrine:schema:update --force` ni générer une seconde chaîne de migrations Doctrine.
+- La validation Doctrine utilise `--skip-sync` ; les defaults/index Liquibase peuvent produire des écarts diagnostiques volontaires.
+- `make test` recrée la base de tests ; les tests navigateur peuvent appliquer des données de développement.
+- Vérifier le projet Compose et la base visée avant ces tests ; utiliser seulement une installation locale jetable.
+- `make reset`, suppressions de volumes, purges et restaurations nécessitent un accord explicite.
+- Scout Market fonctionne sans notion de séjour : ne pas réintroduire le contexte multi-séjour de Campement.
+- La présence d’une unité et sa grille pilotent les besoins.
+- Les modes Scout Market / En caisse changent la logistique, pas les règles de repas explo, pique-nique ou non pris.
+- La forge active est GitHub ; ne pas réintroduire GitLab ni Renovate.
 
-## Repères de développement
+## Collaboration et sécurité
 
-- copier `.env.example` vers `.env` et `app/.env.example` vers `app/.env` pour
-  l’installation locale ; ne jamais versionner de secret ou de fichier `.env` ;
-- utiliser en priorité les cibles du `Makefile` afin de reproduire les commandes
-  exécutées en CI ;
-- préserver les données de l’utilisateur et les changements non liés déjà
-  présents dans l’arbre de travail ;
-- placer la logique métier dans les services ou entités adaptés, garder les
-  contrôleurs fins et couvrir les régressions au niveau le plus pertinent ;
-- conserver les textes d’interface, la documentation et les messages de commit
-  en français, sauf lorsqu’une API ou un standard impose une autre langue.
+- Répondre en français ; respecter les conventions du dépôt et les composants existants.
+- Préserver les modifications locales et les données ; lire `git status --short` avant toute modification.
+- Utiliser une branche ciblée et les Conventional Commits ; ne pas pousser ni fusionner sans demande explicite.
+- Ne jamais écrire de secret dans les consignes, la documentation, les tests ou Git.
+- Les secrets sont injectés hors Git ; consulter les modèles `.env.example` et les procédures, sans ouvrir les valeurs privées.
+- Exécuter les contrôles adaptés au changement et indiquer leurs résultats et limites.
+- Demander un accord explicite avant une action destructive, une restauration ou un changement de production.
 
-## Vérifications usuelles
+## Mémoire à maintenir
 
-Choisir les contrôles proportionnés au changement :
+- `AGENTS.md` est la source unique des consignes ; `CLAUDE.md` contient seulement `@AGENTS.md`.
+- Garder ici les commandes et invariants utiles à chaque session.
+- Mettre les détails dans `docs/context/` et les décisions durables dans `decisions.md`.
+- Dater les observations dans `etat.md` ; distinguer fait vérifié, préférence, proposition et travail restant.
+- Actualiser la rubrique concernée après une tâche ; remplacer les états périmés au lieu d'empiler les comptes rendus.
+- Lire les documents liés selon la tâche ; ne pas charger tout l'historique à chaque session.
 
-- `make doctrine-validate`, `make style` et `make analyse-statique` pour le code
-  PHP ;
-- `make db-validate` pour toute évolution Liquibase ;
-- `make test` pour les tests unitaires et fonctionnels ;
-- `make test-accessibility` et `make test-e2e` pour les parcours d’interface ;
-- `make production-smoke` pour les changements de conteneurs, de configuration
-  ou de déploiement.
 
-Ne pas lancer `make reset` sans accord explicite : cette cible détruit les
-conteneurs, les volumes et la base locale.
+## Documentation à lire selon la tâche
+
+- [Index du contexte](docs/context/README.md) ; [architecture](docs/context/architecture.md).
+- [Métier](docs/context/metier.md), [décisions](docs/context/decisions.md), état de reprise local `docs/context/etat.md` (non versionné).
+- [Exploitation](docs/context/infra.md) ; les informations privées d’hébergement restent dans le projet Infra Homelab.
