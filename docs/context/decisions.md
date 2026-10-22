@@ -8,11 +8,4 @@
 - Release Please et les images signées par digest permettent une livraison traçable.
 - Les détails privés de production appartiennent au projet Infra Homelab.
 
-## Règles spécifiques
-
-- Scout Market fonctionne sans notion de séjour : ne pas réintroduire le contexte multi-séjour de Campement.
-- La présence d’une unité et sa grille pilotent les besoins.
-- Les modes Scout Market / En caisse changent la logistique, pas les règles de repas explo, pique-nique ou non pris.
-- La forge active est GitHub ; ne pas réintroduire GitLab ni Renovate.
-
 Toute nouvelle décision doit préciser son motif et remplacer explicitement un ancien choix si nécessaire.
