@@ -39,3 +39,12 @@ database/import/
 
 # Outil Campement local, conservé hors du nouveau dépôt Scout Market
 scripts/supprimer-mouvements-stock-sejour.sh
+
+# Réglages personnels des assistants et données privées
+.claude/settings.local.json
+.claude/settings.local.*.json
+.claude/.cache/
+
+# Mémoire de travail locale (non publiée)
+/docs/context/etat.md
+/outputs/
