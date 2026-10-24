@@ -54,12 +54,13 @@ final class CalculCommandeFinaleTest extends TestCase
         self::assertSame($kilogramme, $resultat[0]['unite']);
     }
 
-    public function testElleIgnoreLeSecDesGrillesEnCaisseDejaLivreesDansLeBesoinEtLaDeduction(): void
+    public function testElleIgnoreLeSecEtLHygieneDesGrillesEnCaisseDejaLivreesDansLeBesoinEtLaDeduction(): void
     {
         $date = new \DateTimeImmutable('2026-08-14');
         $kilogramme = new Unite('kilogramme', 'kg');
         $riz = (new Denree())->setNom('Riz')->setType(TypeDenree::SEC)->setUniteReference($kilogramme)->setUniteInventaire($kilogramme);
         $tomates = (new Denree())->setNom('Tomates')->setType(TypeDenree::FRAIS)->setUniteReference($kilogramme)->setUniteInventaire($kilogramme);
+        $savon = (new Denree())->setNom('Savon')->setType(TypeDenree::HYGIENE)->setUniteReference($kilogramme)->setUniteInventaire($kilogramme);
         $grilleCaisse = (new GrilleMenu('En caisse', $date, $date->modify('+1 day')))->setTypeDistribution(TypeDistributionMenu::EN_CAISSE);
         $grilleScoutMarket = new GrilleMenu('Scout Market', $date, $date->modify('+1 day'));
 
@@ -76,7 +77,7 @@ final class CalculCommandeFinaleTest extends TestCase
                 'quantite' => $quantite,
                 'unite' => $kilogramme,
             ];
-            $lignesCaisse = [$ligne($riz, $rizCaisse), $ligne($tomates, $tomatesCaisse)];
+            $lignesCaisse = [$ligne($riz, $rizCaisse), $ligne($tomates, $tomatesCaisse), $ligne($savon, 1.0)];
             $lignesScoutMarket = [$ligne($riz, $rizScoutMarket)];
             $commandes[] = [
                 'menu' => $menuCaisse,
@@ -109,6 +110,7 @@ final class CalculCommandeFinaleTest extends TestCase
         self::assertSame(2.0, $parDenree['Tomates']['besoin']);
         self::assertSame(-1.0, $parDenree['Tomates']['stock_previsionnel']);
         self::assertSame(3.0, $parDenree['Tomates']['quantite_commande']);
+        self::assertArrayNotHasKey('Savon', $parDenree);
     }
 
     public function testElleIgnoreTouteLaJourneeDejaLivreeDansLaDeductionDuStock(): void

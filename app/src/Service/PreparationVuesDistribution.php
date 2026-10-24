@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Menu;
-use App\Enum\TypeDenree;
 use App\Enum\TypeDistributionMenu;
 
 final class PreparationVuesDistribution
@@ -60,7 +59,7 @@ final class PreparationVuesDistribution
                 foreach ($grille['unites'] as $unite) {
                     $lignes = array_values(array_filter(
                         $unite['lignes'],
-                        static fn (array $ligne): bool => in_array($ligne['denree']->getType(), [TypeDenree::FRUITS_LEGUMES, TypeDenree::FRAIS], true),
+                        static fn (array $ligne): bool => !$ligne['denree']->getType()->estLivreSurLaPeriode(),
                     ));
                     if ([] === $lignes) {
                         continue;
@@ -112,7 +111,7 @@ final class PreparationVuesDistribution
                 foreach ($grille['unites'] as $unite) {
                     $cleUnite = (string) $unite['groupe']->getId();
                     foreach ($unite['lignes'] as $ligne) {
-                        if (TypeDenree::SEC !== $ligne['denree']->getType()) {
+                        if (!$ligne['denree']->getType()->estLivreSurLaPeriode()) {
                             continue;
                         }
                         $unites[$cleUnite] ??= ['groupe' => $unite['groupe'], 'lignes' => []];

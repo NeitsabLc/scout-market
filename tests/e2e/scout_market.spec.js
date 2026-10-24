@@ -58,7 +58,7 @@ test('les distributions Camp accompagné et Stage présentent les besoins attend
 
   await page.getByRole('link', { name: 'Stage' }).click();
   await expect(page.getByText('Produits frais, fruits et légumes à regrouper dans la caisse quotidienne de chaque unité.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Produits secs à livrer' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Produits secs et d’hygiène à livrer' })).toBeVisible();
   const livraisonSeche = page.locator('.dry-delivery-card');
   const premiereJournee = page.locator('.order-meal-card').first();
   await expect(livraisonSeche.locator('.dry-delivery-units')).not.toBeVisible();
