@@ -9,6 +9,7 @@ enum TypeDenree: string
     case SEC = 'SEC';
     case FRUITS_LEGUMES = 'FRUITS_LEGUMES';
     case FRAIS = 'FRAIS';
+    case HYGIENE = 'HYGIENE';
 
     public function libelle(): string
     {
@@ -16,7 +17,16 @@ enum TypeDenree: string
             self::SEC => 'Produit sec',
             self::FRUITS_LEGUMES => 'Fruit et légume',
             self::FRAIS => 'Produit frais',
+            self::HYGIENE => 'Hygiène',
         };
+    }
+
+    /**
+     * Produits conservables livrés en une fois sur la période en caisse.
+     */
+    public function estLivreSurLaPeriode(): bool
+    {
+        return self::SEC === $this || self::HYGIENE === $this;
     }
 
     /** @return array<string, string> */

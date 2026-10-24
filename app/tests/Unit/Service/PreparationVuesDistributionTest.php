@@ -31,7 +31,7 @@ final class PreparationVuesDistributionTest extends TestCase
 
     public function testEnCaisseConserveLesDenreesDeLaSourceSpecialeParGrilleEtUnite(): void
     {
-        [$commande, $riz, $tomates, $yaourts] = $this->commande();
+        [$commande, $riz, $tomates, $yaourts, , $savon] = $this->commande();
 
         $resultat = (new PreparationVuesDistribution())->enCaisse([$commande]);
 
@@ -42,6 +42,7 @@ final class PreparationVuesDistributionTest extends TestCase
         $detailUnite = $resultat[0]['menus'][0]['unites'][0];
         self::assertSame([$tomates, $yaourts], array_column($detailUnite['lignes'], 'denree'));
         self::assertNotContains($riz, array_column($detailUnite['lignes'], 'denree'));
+        self::assertNotContains($savon, array_column($detailUnite['lignes'], 'denree'));
     }
 
     public function testLesMenusEnCaisseSontRegroupesParJour(): void
@@ -57,18 +58,18 @@ final class PreparationVuesDistributionTest extends TestCase
 
     public function testLesProduitsSecsSontRegroupesParUniteDansLaLivraisonInitiale(): void
     {
-        [$commande, $riz, $tomates] = $this->commande();
+        [$commande, $riz, $tomates, , , $savon] = $this->commande();
 
         $resultat = (new PreparationVuesDistribution())->produitsSecsEnCaisse([$commande]);
 
         self::assertCount(1, $resultat);
         self::assertSame('Farfadets', $resultat[0]['groupe']->getNom());
-        self::assertSame([$riz], array_column($resultat[0]['lignes'], 'denree'));
-        self::assertSame([6.0], array_column($resultat[0]['lignes'], 'quantite'));
+        self::assertSame([$riz, $savon], array_column($resultat[0]['lignes'], 'denree'));
+        self::assertSame([6.0, 3.0], array_column($resultat[0]['lignes'], 'quantite'));
         self::assertNotContains($tomates, array_column($resultat[0]['lignes'], 'denree'));
     }
 
-    /** @return array{array<string, mixed>, Denree, Denree, Denree, Menu} */
+    /** @return array{array<string, mixed>, Denree, Denree, Denree, Menu, Denree} */
     private function commande(): array
     {
         $date = new \DateTimeImmutable('2026-08-31');
@@ -77,6 +78,7 @@ final class PreparationVuesDistributionTest extends TestCase
         $riz = (new Denree())->setNom('Riz')->setType(TypeDenree::SEC)->setUniteReference($unite);
         $tomates = (new Denree())->setNom('Tomates')->setType(TypeDenree::FRUITS_LEGUMES)->setUniteReference($unite);
         $yaourts = (new Denree())->setNom('Yaourts')->setType(TypeDenree::FRAIS)->setUniteReference($unite);
+        $savon = (new Denree())->setNom('Savon')->setType(TypeDenree::HYGIENE)->setUniteReference($unite);
         $grilleScout = new GrilleMenu('Scout', $date, $date);
         $grilleCaisse = (new GrilleMenu('Caisse', $date, $date))->setTypeDistribution(TypeDistributionMenu::EN_CAISSE);
         $menuScout = (new Menu())->setGrilleMenu($grilleScout)->setDateMenu($date)->setTypeRepas($repas);
@@ -93,9 +95,9 @@ final class PreparationVuesDistributionTest extends TestCase
                 ['grille' => $grilleCaisse, 'menu' => $menuCaisse, 'lignes' => [$ligne($riz, 6), $ligne($tomates, 4), $ligne($yaourts, 2)], 'unites' => [[
                     'groupe' => $groupe,
                     'source' => $explo,
-                    'lignes' => [$ligne($riz, 6), $ligne($tomates, 4), $ligne($yaourts, 2)],
+                    'lignes' => [$ligne($riz, 6), $ligne($tomates, 4), $ligne($yaourts, 2), $ligne($savon, 3)],
                 ]]],
             ],
-        ], $riz, $tomates, $yaourts, $explo];
+        ], $riz, $tomates, $yaourts, $explo, $savon];
     }
 }

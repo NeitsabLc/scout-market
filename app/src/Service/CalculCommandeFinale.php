@@ -7,7 +7,6 @@ namespace App\Service;
 use App\Entity\Denree;
 use App\Entity\Groupe;
 use App\Entity\ReferenceFournisseurConditionnement;
-use App\Enum\TypeDenree;
 use App\Enum\TypeDistributionMenu;
 
 final class CalculCommandeFinale
@@ -153,7 +152,7 @@ final class CalculCommandeFinale
                     $cleGroupe = (string) $groupe->getId();
                     foreach ($unite['lignes'] as $ligne) {
                         $denree = $ligne['denree'];
-                        if ($secDejaLivre && TypeDenree::SEC === $denree->getType()) {
+                        if ($secDejaLivre && $denree->getType()->estLivreSurLaPeriode()) {
                             continue;
                         }
                         $cleDenree = (string) $denree->getId();
@@ -206,7 +205,7 @@ final class CalculCommandeFinale
         foreach ($commande['grilles'] as $grille) {
             $estDistribueeEnCaisse = TypeDistributionMenu::EN_CAISSE === $grille['grille']->getTypeDistribution();
             foreach ($grille['lignes'] as $ligne) {
-                if ($estDistribueeEnCaisse && TypeDenree::SEC === $ligne['denree']->getType()) {
+                if ($estDistribueeEnCaisse && $ligne['denree']->getType()->estLivreSurLaPeriode()) {
                     continue;
                 }
                 $lignes[] = $ligne;

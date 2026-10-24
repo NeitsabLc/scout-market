@@ -21,7 +21,8 @@ régimes et allergènes, ainsi que le menu du jour.
 
 Les fournisseurs, denrées, recettes, unités de mesure, types de repas, publics cibles,
 types et origines de mouvements sont globaux. Une denrée possède un type logistique :
-`SEC`, `FRUITS_LEGUMES` ou `FRAIS`.
+`SEC`, `FRUITS_LEGUMES`, `FRAIS` ou `HYGIENE`. Les produits d’hygiène suivent la
+logistique des produits secs : livrés en une fois sur la période en caisse.
 
 Une `GrilleMenu` porte un libellé unique, une date de début, une date de fin et un
 statut actif. Un `Menu` appartient à une grille, représente un repas daté ou un menu
@@ -38,7 +39,7 @@ de séjour.
 La page **Scout Market** agrège, repas par repas, toutes les denrées des menus utilisant
 ce mode. La page **En caisse** contient :
 
-- une section repliable de produits secs à livrer sur l’ensemble de la période ;
+- une section repliable de produits secs et d’hygiène à livrer sur l’ensemble de la période ;
 - une carte repliable par journée ;
 - dans chaque journée, une sous-section par grille puis par unité contenant les fruits,
   légumes et produits frais, sans découpage par repas.
@@ -48,7 +49,7 @@ pris ; il ne fait que choisir la présentation logistique.
 
 Le calcul de commande propose deux ajustements indépendants :
 
-- **Sec en caisse déjà livrée** exclut les produits secs des grilles en caisse des
+- **Sec en caisse déjà livrée** exclut les produits secs et d’hygiène des grilles en caisse des
   besoins et de la déduction de stock ;
 - **Frais de la journée déjà livré** exclut tous les repas de la journée du premier
   repas à déduire lors du calcul du stock prévisionnel.
