@@ -9,9 +9,12 @@ GitHub est la forge de référence de Scout Market :
 - mises à jour de dépendances : Dependabot ;
 - préparation des versions : Release Please.
 
-L’ancien dépôt GitLab et le remote local éventuel nommé `gitlab` sont uniquement
-des traces de la migration. Ils ne doivent plus recevoir de branches, de tags ou
-de releases. Le remote de travail doit être `origin` et pointer vers GitHub.
+Le remote de travail doit être `origin` et pointer vers GitHub.
+
+Le dépôt GitLab des Scouts et Guides de France
+(`sgdf/projets-benevoles/scout-market`) est un miroir alimenté par le workflow
+`miroir-gitlab.yaml` : `main` et les tags `v*` y sont recopiés à chaque push.
+Aucune branche, aucun tag ni aucune release n’y est créé à la main.
 
 ## Protection de `main`
 
