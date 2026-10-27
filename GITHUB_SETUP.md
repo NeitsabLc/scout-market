@@ -9,9 +9,12 @@ GitHub est la forge de référence de Scout Market :
 - mises à jour de dépendances : Dependabot ;
 - préparation des versions : Release Please.
 
-L’ancien dépôt GitLab et le remote local éventuel nommé `gitlab` sont uniquement
-des traces de la migration. Ils ne doivent plus recevoir de branches, de tags ou
-de releases. Le remote de travail doit être `origin` et pointer vers GitHub.
+Le remote de travail doit être `origin` et pointer vers GitHub.
+
+Le dépôt GitLab des Scouts et Guides de France
+(`sgdf/projets-benevoles/scout-market`) est un miroir alimenté par le workflow
+`miroir-gitlab.yaml` : `main` et les tags `v*` y sont recopiés à chaque push.
+Aucune branche, aucun tag ni aucune release n’y est créé à la main.
 
 ## Protection de `main`
 
@@ -37,7 +40,7 @@ et ne sont jamais versionnés.
 |---|---|---|
 | `RELEASE_PLEASE_TOKEN` | créer ou actualiser la pull request de version, puis créer le tag et la GitHub Release | écriture sur le contenu et les pull requests du dépôt |
 | `HOMELAB_DEPLOY_DISPATCH_TOKEN` | envoyer l’événement de déploiement en recette à `NeitsabLc/homelab-deploy` | accès au dépôt cible et permission d’y créer un repository dispatch |
-| `GITLAB_MIRROR_TOKEN` | pousser `main` et les tags vers le miroir GitLab SGDF | jeton d’accès au projet GitLab, rôle Maintainer, portée `write_repository`, à renouveler avant expiration |
+| `GITLAB_MIRROR_SSH_KEY` | pousser `main` et les tags vers le miroir GitLab SGDF | clé privée d’une deploy key GitLab dédiée, avec droit d’écriture et autorisée à pousser sur `main` (règle de branche) |
 
 Le `GITHUB_TOKEN` fourni par Actions suffit pour lire le dépôt, publier ou lire
 les paquets GHCR et demander un jeton OIDC pour la signature Sigstore. Les

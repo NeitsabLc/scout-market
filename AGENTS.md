@@ -73,7 +73,7 @@ make style analyse-statique doctrine-validate
 - Pas de notion de séjour : ne pas réintroduire le contexte multi-séjour de Campement.
 - La présence d'une unité et sa grille pilotent les besoins.
 - Les modes Scout Market / En caisse changent la logistique, pas les règles de repas (explo, pique-nique, non pris).
-- La forge est GitHub : ne pas réintroduire GitLab ni Renovate.
+- La forge est GitHub ; le GitLab SGDF est alimenté par miroir depuis GitHub. Pas de Renovate : Dependabot gère les dépendances.
 
 ## 08 Après le développement
 
