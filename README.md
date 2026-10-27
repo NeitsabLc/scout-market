@@ -54,7 +54,12 @@ Liquibase est l’unique source de vérité du schéma. Un changeset déjà appl
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) décrit le workflow de contribution ;
 - [GITHUB_SETUP.md](GITHUB_SETUP.md) décrit la forge, les releases et GHCR ;
+- [DEPLOIEMENT.md](DEPLOIEMENT.md) donne les bases pour installer et mettre à jour l’application ;
+- [PIA.md](PIA.md) décrit les données traitées et leur durée de conservation ;
 - le guide utilisateur PDF est accessible depuis l’interface ;
-- les dossiers d’architecture, d’installation et d’exploitation sont maintenus séparément du dépôt.
+- les détails propres à l’hébergement de Jambville sont maintenus séparément du dépôt.
+
+Le code est publié en miroir sur le GitLab des Scouts et Guides de France
+(`sgdf/projets-benevoles/scout-market`) ; GitHub reste la forge de référence.
 
 Le projet est distribué sous licence [Apache 2.0](LICENSE).

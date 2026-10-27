@@ -5,6 +5,8 @@
 - Les bases de test sont dédiées et recréables ; une base métier n’est jamais une cible de test destructive.
 - Les contrôleurs restent fins ; les règles métier et les contrôles d’accès vivent côté serveur.
 - GitHub est la forge de référence ; `CONTRIBUTING.md` définit le cycle courant vers `main`.
+- Le dépôt GitLab SGDF (Projets Numériques Bénévoles) est un miroir alimenté par GitHub Actions :
+  aucune modification n’y est faite directement. Dependabot tient lieu de Renovate pour le critère 2.22.
 - Release Please et les images signées par digest permettent une livraison traçable.
 - Les détails privés de production appartiennent au projet Infra Homelab.
 

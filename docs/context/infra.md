@@ -35,6 +35,8 @@ branche ──PR──▶ CI ──squash──▶ main ──▶ PR Release Ple
 
 - Rapports Trivy publiés dans GitHub Security ; actions épinglées par SHA ; permissions en lecture par défaut.
 - Dependabot : Composer, npm, GitHub Actions, images Docker.
+- Miroir GitLab SGDF (`miroir-gitlab.yaml`) : chaque push sur `main` et chaque tag `v*` sont recopiés ;
+  sur GitLab, `.gitlab-ci.yml` n’exécute que le composant de sécurité PNB (Betterleaks).
 
 ## 03 Versions (Release Please)
 

@@ -1,0 +1,39 @@
+name: Synchroniser le miroir GitLab SGDF
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: miroir-gitlab
+  cancel-in-progress: false
+
+jobs:
+  miroir:
+    name: Pousser main et les tags vers GitLab
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer l'historique complet
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Pousser vers le dépôt GitLab
+        env:
+          GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
+          GITLAB_MIRROR_URL: https://gitlab.com/sgdf/projets-benevoles/scout-market.git
+        run: |
+          test -n "$GITLAB_MIRROR_TOKEN"
+          auth="$(printf 'oauth2:%s' "$GITLAB_MIRROR_TOKEN" | base64 -w0)"
+          echo "::add-mask::$auth"
+          git -c http.extraheader="Authorization: Basic $auth" \
+            push "$GITLAB_MIRROR_URL" refs/remotes/origin/main:refs/heads/main 'refs/tags/v*:refs/tags/v*'
