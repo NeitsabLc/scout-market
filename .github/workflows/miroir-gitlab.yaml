@@ -29,11 +29,17 @@ jobs:
 
       - name: Pousser vers le dépôt GitLab
         env:
-          GITLAB_MIRROR_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
-          GITLAB_MIRROR_URL: https://gitlab.com/sgdf/projets-benevoles/scout-market.git
+          GITLAB_MIRROR_SSH_KEY: ${{ secrets.GITLAB_MIRROR_SSH_KEY }}
+          GITLAB_MIRROR_URL: git@gitlab.com:sgdf/projets-benevoles/scout-market.git
+          # Clé d'hôte publiée par GitLab (empreinte SHA256:eUXGGm1YGsMAS7vkcx6JOJdOGHPem5gQp4taiCfCLB8)
+          GITLAB_HOST_KEY: gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf
         run: |
-          test -n "$GITLAB_MIRROR_TOKEN"
-          auth="$(printf 'oauth2:%s' "$GITLAB_MIRROR_TOKEN" | base64 -w0)"
-          echo "::add-mask::$auth"
-          git -c http.extraheader="Authorization: Basic $auth" \
-            push "$GITLAB_MIRROR_URL" refs/remotes/origin/main:refs/heads/main 'refs/tags/v*:refs/tags/v*'
+          test -n "$GITLAB_MIRROR_SSH_KEY"
+          ssh_dir="$RUNNER_TEMP/miroir-gitlab"
+          trap 'rm -rf "$ssh_dir"' EXIT
+          install -d -m 700 "$ssh_dir"
+          printf '%s\n' "$GITLAB_MIRROR_SSH_KEY" > "$ssh_dir/id_ed25519"
+          chmod 600 "$ssh_dir/id_ed25519"
+          printf '%s\n' "$GITLAB_HOST_KEY" > "$ssh_dir/known_hosts"
+          export GIT_SSH_COMMAND="ssh -i $ssh_dir/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$ssh_dir/known_hosts"
+          git push "$GITLAB_MIRROR_URL" refs/remotes/origin/main:refs/heads/main 'refs/tags/v*:refs/tags/v*'
