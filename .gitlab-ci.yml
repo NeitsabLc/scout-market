@@ -1,0 +1,15 @@
+# Pipeline du miroir GitLab SGDF (Projets Numériques Bénévoles).
+# GitHub reste la forge de référence : la CI complète est dans .github/workflows/.
+# Ici, seul le composant de sécurité PNB s'exécute (recherche de secrets Betterleaks).
+
+stages:
+  - develop
+
+include:
+  - component: $CI_SERVER_FQDN/sgdf/projets-benevoles/pnb-cicd/security@v1.4.0
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - when: never
