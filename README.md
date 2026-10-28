@@ -55,7 +55,7 @@ Liquibase est l’unique source de vérité du schéma. Un changeset déjà appl
 - [CONTRIBUTING.md](CONTRIBUTING.md) décrit le workflow de contribution ;
 - [GITHUB_SETUP.md](GITHUB_SETUP.md) décrit la forge, les releases et GHCR ;
 - [DEPLOIEMENT.md](DEPLOIEMENT.md) donne les bases pour installer et mettre à jour l’application ;
-- [PIA.md](PIA.md) décrit les données traitées et leur durée de conservation ;
+- [PIA.md](PIA.md) et [confidentialite.md](docs/context/confidentialite.md) décrivent les données traitées et leur durée de conservation ;
 - le guide utilisateur PDF est accessible depuis l’interface ;
 - les détails propres à l’hébergement de Jambville sont maintenus séparément du dépôt.
 

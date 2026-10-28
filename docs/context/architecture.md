@@ -78,14 +78,49 @@ scout-market/
 
 ## 06 Données
 
+### Règles communes
+
 - Liquibase possède le schéma ; Doctrine ne génère jamais de migration (`doctrine-validate` utilise `--skip-sync`).
 - Changesets `Vxxx__description.sql` dans `database/changelog/`, immuables une fois appliqués ; toute évolution = nouveau fichier.
+- Migrations par étapes réversibles : ajouter, migrer les données, puis supprimer l'ancien élément dans une version ultérieure.
+- Rôles PostgreSQL limités : l'application n'a pas les droits de modifier le schéma.
+- Identifiants en UUID v7 (`Entity/EntityIdTrait.php`) ; aucun entier auto-incrémenté exposé.
+- Dates et heures en `TIMESTAMPTZ`, stockées en UTC, affichées en `Europe/Paris` (`docker/php/php.ini`).
+- Chaque table portant une donnée personnelle a sa règle de purge dans `confidentialite.md`.
+
+### Propre au projet
+
 - Chaque nouveau changeset est inclus explicitement dans `db.changelog-master.yaml` (pas d'`includeAll`).
 - Données de développement : `make dev-data` (commande `ChargerJeuDonneesDeveloppementCommand`), jamais hors local.
 - Vérifier avec `make db-validate` et `make db-sql` ; sauvegarde restaurable avant toute migration durable.
-- Rôles PostgreSQL limités : l'application n'a pas les droits de modifier le schéma.
 
-## 07 Performance et scalabilité
+## 07 Conventions de code
+
+- Code, tables et colonnes en français (exception à la règle commune, `decisions.md`) ; textes d'interface en français.
+- Style : PHP-CS-Fixer (`make style`) ; analyse statique : PHPStan (`make analyse-statique`).
+- Une fonctionnalité = contrôleur + service + dossier de gabarits dédié.
+
+## 08 Tests
+
+| Type | Outil | Commande | Obligatoire quand |
+|---|---|---|---|
+| Unitaires et métier | PHPUnit | `make test` | Toujours |
+| Cloisonnement | PHPUnit (tests fonctionnels) | `make test` | L'accès aux données change |
+| Accessibilité | Playwright + Axe | `make test-accessibility` | L'interface change |
+| Parcours | Playwright | `make test-e2e` | Un parcours change |
+| Configuration de production | Compose | `make production-smoke` | Compose ou images changent |
+
+## 09 Flux et frontières de sécurité
+
+| Frontière | Contrôle |
+|---|---|
+| Navigateur → Nginx | HTTPS, en-têtes de sécurité (HSTS, CSP, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors`) |
+| Nginx → Symfony | Proxies de confiance (`TRUSTED_PROXIES`), hôtes autorisés (`TRUSTED_HOST_PATTERN`) |
+| Symfony → données | Pare-feu `security.yaml` (refus par défaut), contrôle par unité, requêtes Doctrine paramétrées |
+| Écran de distribution public | Jeton dans l'URL (`/distribution/{jeton}`), compte `ROLE_TECHNIQUE` sans connexion |
+| Symfony → SMTP | Identifiants côté serveur uniquement |
+
+## 10 Performance et scalabilité
 
 | Sujet | Règle |
 |---|---|
