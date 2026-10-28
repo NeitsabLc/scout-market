@@ -1,6 +1,7 @@
 # Design system — Scout Market
 
 > Charte graphique Scouts et Guides de France (SGDF), commune à Campement, Bénévoles Jambville et Scout Market.
+> Référence : charte graphique SGDF « identité visuelle » (couleurs p. 18, typographies p. 19-21, logo p. 8-10).
 > Source des valeurs : `app/assets/styles/app.css` (`:root`). Toute nouvelle valeur passe d'abord par une variable.
 > Les écarts propres à l'application sont listés en §10.
 
@@ -13,36 +14,63 @@
 | `app/assets/images/favicon.svg` | Icône d'onglet |
 | `app/assets/images/repas-viande.svg` | Pictogramme de type de repas |
 
-- Ne pas déformer, recolorer ni recadrer le logo ; garder une zone de respiration autour.
+- Logo en bleu institutionnel sur fond blanc, en blanc sur fond bleu institutionnel.
+- Zone de respiration vierge autour du logo : aucun texte, visuel ni partie de photo.
+- Respecter la taille minimale de la charte (1,5 cm et 3,2 cm selon la version) ; à l'écran, ne jamais réduire
+  le logo au point de rendre le texte illisible.
+- Interdits : couleur non autorisée, déformation, modification, suppression d'un élément ou du symbole.
 - Toujours avec un texte alternatif (`alt="Scouts et Guides de France"`).
 
 ## 02 Couleurs
 
+### Couleurs de la charte
+
+| Variable | Valeur | Rôle dans la charte | Contraste sur blanc |
+|---|---|---|---|
+| `--sgdf-blue` | `#003a5d` | **Couleur principale** (bleu institutionnel), présente sur tous les supports | 12 : 1 |
+| `--sgdf-blue-light` | `#0077b3` | Scouts et guides | 4,9 : 1 |
+| `--sgdf-green` | `#007254` | Compagnons | 5,9 : 1 |
+| `--sgdf-violet` | `#6e74aa` | Vent du large | 4,6 : 1 |
+| `--sgdf-red` | `#d03f15` | Pionniers et caravelles | 5,2 : 1 |
+| `--sgdf-mint` | `#65bc99` | Farfadets | 2,3 : 1 |
+| `--sgdf-orange` | `#ff8300` | Louveteaux et jeannettes | 2,4 : 1 |
+
+- Les couleurs secondaires accompagnent le bleu institutionnel « en touches » : jamais à sa place.
+- Aucune autre teinte de marque : une couleur hors de ce tableau est interdite (logo compris).
+
+### Couleurs d'interface
+
 | Variable | Valeur | Usage |
 |---|---|---|
-| `--sgdf-blue` | `#003a5d` | Couleur principale : titres, navigation, boutons primaires |
-| `--sgdf-blue-light` | `#0077b3` | Liens, éléments actifs |
-| `--sgdf-mint` | `#65bc99` | Accent, focus clavier, succès |
 | `--surface` | `#ffffff` | Fond des cartes et formulaires |
 | `--surface-muted` | `#f4f7f9` | Fond de page, survol des lignes |
 | `--border` | `#d9e2e7` | Bordures, séparateurs |
+| `--text` | `#003a5d` | Texte courant (bleu institutionnel, exigé par la charte sur fond clair) |
 | `--text-muted` | `#526875` | Texte secondaire |
-| `--danger` | `#b42318` | Erreurs, actions destructives |
+| `--link` | `#0077b3` | Liens, éléments actifs |
+| `--success` | `#007254` | Succès |
+| `--danger` | `#d03f15` (rouge de la charte) | Erreurs, actions destructives |
 | `--danger-surface` | `#fef3f2` | Fond des messages d'erreur |
+| `--focus` | `#0077b3` | Contour de focus clavier |
 
-- Contraste minimal 4.5:1 pour le texte (3:1 pour les grands titres et les icônes).
+- Contraste minimal 4.5:1 pour le texte (3:1 pour les grands titres, les icônes et le contour de focus).
+- `#65bc99` et `#ff8300` n'atteignent pas 3:1 sur blanc : décor et aplats uniquement, jamais pour du texte,
+  une icône seule ou le focus.
 - Ne jamais transmettre une information par la couleur seule (ajouter texte ou icône).
 - Aucune couleur codée en dur : remplacer celles qui existent quand on touche le bloc.
 
 ## 03 Typographie
 
-| Rôle | Police | Variable | Repli |
+| Rôle (charte) | Police | Variable | Repli |
 |---|---|---|---|
-| Titres, navigation, boutons | Raleway (400, 700) | `--font-title` | "Segoe UI", Arial, sans-serif |
 | Texte courant, formulaires | Sarabun (400, 700, italique) | `--font-body` | "Segoe UI", Arial, sans-serif |
+| Titres et sous-titres, navigation, boutons | Raleway (400, 700) | `--font-title` | "Segoe UI", Arial, sans-serif |
 
-- Polices auto-hébergées dans `app/assets/fonts/` (aucun appel à un service externe).
-- Tailles en `rem` ; texte courant ≥ 1rem, mentions et métadonnées ≥ 0.75rem.
+- Sarabun en bleu institutionnel sur fond clair, en blanc sur fond foncé (règle de la charte).
+- Caveat Brush, prévue par la charte pour le titrage, n'est pas utilisée dans les applications.
+- Polices auto-hébergées dans `app/assets/fonts/` : aucun appel à un service externe.
+- E-mails : polices système (`Arial, Helvetica, sans-serif`), jamais chargées depuis un service externe.
+- Tailles en `rem` ; texte courant ≥ 1rem, mentions et métadonnées ≥ 0.75rem (la charte interdit moins de 6 pt).
 
 ## 04 Espacements et rayons
 
@@ -65,7 +93,7 @@
 | Élément | Règle |
 |---|---|
 | Boutons | `.button`, `.button--primary` (bleu SGDF), `.button--danger-outline` ; un seul bouton primaire par zone |
-| Focus | `outline: 3px solid var(--sgdf-mint)` + `outline-offset: 2px`, jamais supprimé |
+| Focus | `outline: 3px solid var(--focus)` + `outline-offset: 2px`, jamais supprimé |
 | Tableaux | `components/list_table.html.twig` et `sort_indicator.html.twig` pour les listes triables |
 
 ## 07 Messages et retours utilisateur
@@ -101,6 +129,9 @@
 | Élément | Écart | Motif |
 |---|---|---|
 | Logo | `logo-jambville-horizontal.png` présent, non utilisé aujourd'hui | Domaine de Jambville ; usage à décider |
-| Polices | `caveat-brush/` présente mais inutilisée | Ne pas l'employer sans décision |
+| Polices | `caveat-brush/` présente dans les assets | Non utilisée (décision commune) : à retirer |
+| Couleurs | `--danger` en `#b42318`, hors charte | Passer au rouge de la charte `#d03f15` |
+| Couleurs | `var(--sgdf-yellow)` utilisée dans `.legal-notice` sans être définie, hors charte | Remplacer par une couleur de la charte |
+| Focus | Contour en `--sgdf-blue-light` (bonne couleur), sans variable `--focus` | Introduire `--focus` |
 | Messages | Les flashs `global-flash` s'affichent encore dans la page | Passage aux pop-ups de §07 à faire (`etat.md`) |
 | Couleurs | Des couleurs codées en dur subsistent dans `app.css` | Remplacement progressif par les variables |
