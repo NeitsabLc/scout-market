@@ -78,7 +78,7 @@ la restauration de la sauvegarde.
 
 | Tâche | Commande | Fréquence conseillée |
 |---|---|---|
-| Purge et anonymisation (voir [PIA.md](PIA.md)) | `make release-maintenance-now` | quotidienne |
+| Purge et anonymisation (voir [confidentialite.md](docs/context/confidentialite.md)) | `make release-maintenance-now` | quotidienne |
 | Sauvegarde chiffrée | `make release-backup-now` | quotidienne, avant chaque mise à jour |
 
 La rotation des sauvegardes et leur copie hors du serveur relèvent de l’hébergeur.
