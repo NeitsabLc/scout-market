@@ -109,7 +109,7 @@ CMD ["php-fpm"]
 
 FROM nginx:${NGINX_VERSION}@${NGINX_IMAGE_DIGEST} AS nginx-production
 
-ARG OS_PACKAGE_REFRESH=manual
+ARG OS_PACKAGE_REFRESH=2026-11-03
 
 RUN test -n "$OS_PACKAGE_REFRESH" \
     && apk upgrade --no-cache
