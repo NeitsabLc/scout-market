@@ -17,6 +17,7 @@
 | 2026-09-27 | Release Please et images signées par digest | Livraison traçable |
 | 2026-10-22 | Les détails privés de production appartiennent au projet Infra Homelab | Dépôt public |
 | 2026-10-28 | Code, tables et colonnes en français, par exception à la règle commune (code en anglais) | Vocabulaire métier SGDF entièrement français |
+| 2026-11-03 | Un rafraîchissement de sécurité d'image de base (paquets Debian ou Alpine, PostgreSQL) passe par une PR `fix(security)` dédiée, digest mis à jour, CI verte avant fusion | Traçabilité des correctifs (PR #100 à #102) |
 
 ## 02 Leçons apprises
 
