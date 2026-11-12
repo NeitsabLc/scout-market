@@ -17,7 +17,7 @@ TEST_DATABASE_URL := jdbc:postgresql://database:5432/$(TEST_DATABASE)
 	db-validate db-status db-status-dev db-sql db-sql-dev db-update db-update-dev dev-data db-history db-shell db-check-connection \
 	db-performance-report \
 	doctrine-validate style style-fix analyse-statique \
-	test-accessibility test-e2e test-db-reset test reset clean backup-now backup-restore-test production-smoke \
+	test-accessibility test-e2e test-recette test-db-reset test reset clean backup-now backup-restore-test production-smoke \
 	release-config release-verify release-pull release-backup-now release-db-status release-db-update release-up release-ps release-maintenance-now \
 	maintenance-now prod-db-roles-prepare prod-db-roles-finalize
 
@@ -150,6 +150,9 @@ test-accessibility: db-update-dev assets-compile ## Tester l'accessibilité sur 
 
 test-e2e: db-update-dev assets-compile ## Tester les parcours E2E sur les données de développement
 	npm run test:e2e
+
+test-recette: ## Parcours connectés sur la recette déployée (RECETTE_URL, RECETTE_EMAIL, RECETTE_MOT_DE_PASSE requis)
+	npm run test:recette
 
 test-db-reset: ## Recréer et initialiser la base de tests
 	$(DOCKER_COMPOSE) exec database sh -c \
