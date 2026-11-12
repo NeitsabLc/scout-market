@@ -18,6 +18,7 @@
 | 2026-10-22 | Les détails privés de production appartiennent au projet Infra Homelab | Dépôt public |
 | 2026-10-28 | Code, tables et colonnes en français, par exception à la règle commune (code en anglais) | Vocabulaire métier SGDF entièrement français |
 | 2026-11-03 | Un rafraîchissement de sécurité d'image de base (paquets Debian ou Alpine, PostgreSQL) passe par une PR `fix(security)` dédiée, digest mis à jour, CI verte avant fusion | Traçabilité des correctifs (PR #100 à #102) |
+| 2026-11-12 | Les agents fusionnent sans nouvel accord une PR à jour sur `main` dont la CI est verte (contrôles de `AGENTS.md` §08 pour nos PR, CI seule pour Dependabot) ; la PR Release Please et la mise en production restent soumises à accord | Remplace « ne jamais fusionner sans accord explicite », contraire aux consignes du propriétaire |
 
 ## 02 Leçons apprises
 
