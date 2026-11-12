@@ -68,7 +68,7 @@ branche ──PR──▶ CI ──squash──▶ main ──▶ PR Release Ple
 
 - Le déploiement est exécuté par le dépôt de déploiement privé, sur un runner auto-hébergé.
 - Une release publiée ne prouve pas son déploiement : vérifier le manifeste et l'état réel.
-- Jamais de données de développement en recette ou en production ; le jeu de recette dédié est chargé par `scripts/charger-jeu-donnees-recette.sh`, sur accord.
+- Jamais de données de développement en recette ou en production ; le jeu de recette dédié est chargé par `scripts/charger-jeu-donnees-recette.sh [AAAA-MM-JJ]`, sur accord, avec le compte applicatif PostgreSQL (le compte de supervision n'a aucun droit sur le schéma). Ses grilles couvrent 14 jours à partir de la date donnée, par défaut le jour calendaire de Paris.
 
 ## 06 Secrets
 

@@ -3,6 +3,18 @@
 -- Le script est indépendant de Liquibase, transactionnel via le lanceur et
 -- rejouable. Il ne supprime que les lignes dont les UUID commencent par 9,
 -- plage réservée à ce jeu de données.
+--
+-- Les grilles couvrent 14 jours à partir de la variable psql `date_debut`
+-- (AAAA-MM-JJ), par défaut le jour calendaire de Paris : CURRENT_DATE suivrait
+-- le fuseau de la session (UTC) et décalerait le jeu d'un jour en soirée.
+-- Les mouvements de stock restent horodatés au moment du chargement : avec une
+-- date de début éloignée, leur date ne correspond pas à celle des repas.
+
+\if :{?date_debut}
+\else
+SELECT to_char(now() AT TIME ZONE 'Europe/Paris', 'YYYY-MM-DD') AS date_debut \gset
+\endif
+SELECT set_config('jeu_recette.date_debut', to_char((:'date_debut')::date, 'YYYY-MM-DD'), true) AS date_debut_jeu \gset
 
 DO $$
 BEGIN
@@ -38,9 +50,9 @@ WHERE id::text LIKE '91000000-0000-7000-8000-%';
 INSERT INTO scout_market.grille_menu
     (id, label, date_debut, date_fin, type_distribution)
 VALUES
-    ('91000000-0000-7000-8000-000000000001', 'Démo recette — Stage forêt', CURRENT_DATE, CURRENT_DATE + 13, 'EN_CAISSE'),
-    ('91000000-0000-7000-8000-000000000002', 'Démo recette — Camp itinérant', CURRENT_DATE, CURRENT_DATE + 13, 'SCOUT_MARKET'),
-    ('91000000-0000-7000-8000-000000000003', 'Démo recette — Camp marin', CURRENT_DATE, CURRENT_DATE + 13, 'SCOUT_MARKET');
+    ('91000000-0000-7000-8000-000000000001', 'Démo recette — Stage forêt', current_setting('jeu_recette.date_debut')::date, current_setting('jeu_recette.date_debut')::date + 13, 'EN_CAISSE'),
+    ('91000000-0000-7000-8000-000000000002', 'Démo recette — Camp itinérant', current_setting('jeu_recette.date_debut')::date, current_setting('jeu_recette.date_debut')::date + 13, 'SCOUT_MARKET'),
+    ('91000000-0000-7000-8000-000000000003', 'Démo recette — Camp marin', current_setting('jeu_recette.date_debut')::date, current_setting('jeu_recette.date_debut')::date + 13, 'SCOUT_MARKET');
 
 INSERT INTO scout_market.fournisseur (id, nom, telephone, email, adresse)
 VALUES
@@ -201,7 +213,7 @@ SELECT
     ('96000000-0000-7000-8000-' || lpad((grilles.numero * 1000 + jour * 10 + repas.numero)::text, 12, '0'))::uuid,
     grilles.id,
     type_repas.id,
-    CURRENT_DATE + jour,
+    current_setting('jeu_recette.date_debut')::date + jour,
     repas.libelle || ' — jour ' || (jour + 1)
 FROM grilles
 CROSS JOIN generate_series(0, 13) AS jour
@@ -314,13 +326,13 @@ WHERE menu_denree.menu_id::text LIKE '96000000-0000-7000-8000-%';
 INSERT INTO scout_market.groupe
     (id, grille_menu_id, nom, effectif_jeune, effectif_adulte, nombre_vegetariens, nombre_sans_lactose, nombre_sans_gluten, type, date_debut_presence, date_fin_presence)
 VALUES
-    ('97000000-0000-7000-8000-000000000001', '91000000-0000-7000-8000-000000000001', 'Démo recette — Farfadets des Chênes', 18, 4, 2, 1, 1, 'farfadets', CURRENT_DATE, CURRENT_DATE + 6),
-    ('97000000-0000-7000-8000-000000000002', '91000000-0000-7000-8000-000000000001', 'Démo recette — Louveteaux de la Rivière', 26, 5, 3, 2, 1, 'louveteaux-jeannettes', CURRENT_DATE, CURRENT_DATE + 13),
-    ('97000000-0000-7000-8000-000000000003', '91000000-0000-7000-8000-000000000001', 'Démo recette — Équipe technique', 0, 12, 2, 1, 2, 'scouts-guides', CURRENT_DATE + 2, CURRENT_DATE + 13),
-    ('97000000-0000-7000-8000-000000000004', '91000000-0000-7000-8000-000000000002', 'Démo recette — Scouts-Guides des Étoiles', 32, 6, 5, 1, 2, 'scouts-guides', CURRENT_DATE, CURRENT_DATE + 10),
-    ('97000000-0000-7000-8000-000000000005', '91000000-0000-7000-8000-000000000002', 'Démo recette — Pionniers du Levant', 21, 4, 4, 2, 2, 'pionniers-caravelles', CURRENT_DATE + 3, CURRENT_DATE + 13),
-    ('97000000-0000-7000-8000-000000000006', '91000000-0000-7000-8000-000000000003', 'Démo recette — Moussaillons du Large', 28, 5, 3, 0, 1, 'louveteaux-jeannettes', CURRENT_DATE, CURRENT_DATE + 13),
-    ('97000000-0000-7000-8000-000000000007', '91000000-0000-7000-8000-000000000003', 'Démo recette — Caravelles de l’Océan', 24, 5, 6, 2, 1, 'pionniers-caravelles', CURRENT_DATE + 1, CURRENT_DATE + 12);
+    ('97000000-0000-7000-8000-000000000001', '91000000-0000-7000-8000-000000000001', 'Démo recette — Farfadets des Chênes', 18, 4, 2, 1, 1, 'farfadets', current_setting('jeu_recette.date_debut')::date, current_setting('jeu_recette.date_debut')::date + 6),
+    ('97000000-0000-7000-8000-000000000002', '91000000-0000-7000-8000-000000000001', 'Démo recette — Louveteaux de la Rivière', 26, 5, 3, 2, 1, 'louveteaux-jeannettes', current_setting('jeu_recette.date_debut')::date, current_setting('jeu_recette.date_debut')::date + 13),
+    ('97000000-0000-7000-8000-000000000003', '91000000-0000-7000-8000-000000000001', 'Démo recette — Équipe technique', 0, 12, 2, 1, 2, 'scouts-guides', current_setting('jeu_recette.date_debut')::date + 2, current_setting('jeu_recette.date_debut')::date + 13),
+    ('97000000-0000-7000-8000-000000000004', '91000000-0000-7000-8000-000000000002', 'Démo recette — Scouts-Guides des Étoiles', 32, 6, 5, 1, 2, 'scouts-guides', current_setting('jeu_recette.date_debut')::date, current_setting('jeu_recette.date_debut')::date + 10),
+    ('97000000-0000-7000-8000-000000000005', '91000000-0000-7000-8000-000000000002', 'Démo recette — Pionniers du Levant', 21, 4, 4, 2, 2, 'pionniers-caravelles', current_setting('jeu_recette.date_debut')::date + 3, current_setting('jeu_recette.date_debut')::date + 13),
+    ('97000000-0000-7000-8000-000000000006', '91000000-0000-7000-8000-000000000003', 'Démo recette — Moussaillons du Large', 28, 5, 3, 0, 1, 'louveteaux-jeannettes', current_setting('jeu_recette.date_debut')::date, current_setting('jeu_recette.date_debut')::date + 13),
+    ('97000000-0000-7000-8000-000000000007', '91000000-0000-7000-8000-000000000003', 'Démo recette — Caravelles de l’Océan', 24, 5, 6, 2, 1, 'pionniers-caravelles', current_setting('jeu_recette.date_debut')::date + 1, current_setting('jeu_recette.date_debut')::date + 12);
 
 INSERT INTO scout_market.groupe_repas (groupe_id, menu_id, mode)
 SELECT affectations.groupe_id::uuid, menu.id, affectations.mode
@@ -334,7 +346,7 @@ FROM (VALUES
     ('97000000-0000-7000-8000-000000000007', '91000000-0000-7000-8000-000000000003', 9, 'DINER', 'NON_PRIS')
 ) AS affectations(groupe_id, grille_id, jour, type_repas, mode)
 JOIN scout_market.menu ON menu.grille_menu_id = affectations.grille_id::uuid
-    AND menu.date_menu = CURRENT_DATE + affectations.jour
+    AND menu.date_menu = current_setting('jeu_recette.date_debut')::date + affectations.jour
 JOIN scout_market.type_repas ON type_repas.id = menu.type_repas_id
     AND type_repas.code = affectations.type_repas;
 
@@ -377,7 +389,7 @@ SELECT
 FROM scout_market.menu
 JOIN scout_market.type_repas ON type_repas.id = menu.type_repas_id
 WHERE menu.grille_menu_id = '91000000-0000-7000-8000-000000000001'
-  AND menu.date_menu = CURRENT_DATE
+  AND menu.date_menu = current_setting('jeu_recette.date_debut')::date
   AND type_repas.code = 'DEJEUNER';
 
 INSERT INTO scout_market.mouvement_stock_ligne
@@ -420,9 +432,9 @@ BEGIN
         SELECT 1
         FROM scout_market.grille_menu
         WHERE id::text LIKE '91000000-0000-7000-8000-%'
-          AND (date_debut <> CURRENT_DATE OR date_fin <> CURRENT_DATE + 13)
+          AND (date_debut <> current_setting('jeu_recette.date_debut')::date OR date_fin <> current_setting('jeu_recette.date_debut')::date + 13)
     ) THEN
-        RAISE EXCEPTION 'Les grilles de recette ne couvrent pas exactement les 14 prochains jours.';
+        RAISE EXCEPTION 'Les grilles de recette ne couvrent pas exactement les 14 jours à partir de la date de début.';
     END IF;
 END
 $$;
