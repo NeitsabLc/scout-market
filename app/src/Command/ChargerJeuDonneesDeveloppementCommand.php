@@ -43,6 +43,8 @@ final class ChargerJeuDonneesDeveloppementCommand extends Command
         }
 
         $this->connection->transactional(static function (Connection $connection) use ($sql): void {
+            // CURRENT_DATE doit suivre le jour calendaire de l'application (Paris), pas celui de la session.
+            $connection->executeStatement("SET LOCAL TIME ZONE 'Europe/Paris'");
             $connection->executeStatement($sql);
         });
 

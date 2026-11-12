@@ -33,3 +33,4 @@
 | Image PHP vulnérable (CVE PHP 8.4, #82, #88) | Image épinglée par digest, refus des versions vulnérables en CI | La CI refuse une image PHP antérieure à la version corrigée |
 | Betterleaks échouait faute de droits sur le runner (#38) | Exécution avec l'utilisateur du runner | Les outils de CI tournent sans privilège, avec l'utilisateur du runner |
 | Une montée Playwright de Dependabot faisait échouer l'étape d'accessibilité de la CI (#103) | Image Playwright de la CI montée avec le paquet | Toute montée de `playwright-core` s'accompagne de `PLAYWRIGHT_IMAGE` (version et digest) dans `ci.yaml` |
+| Un test E2E échouait en fin de soirée UTC (dès 22 h ou 23 h selon l'heure d'été), quand la date UTC diffère de celle de Paris : le jeu de développement datait les repas en UTC, l'appli filtre en Europe/Paris | `SET LOCAL TIME ZONE 'Europe/Paris'` au chargement du jeu | Toute date « du jour » calculée en SQL l'est dans le fuseau Europe/Paris |
