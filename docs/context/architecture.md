@@ -38,7 +38,7 @@ Service backup      : sauvegardes chiffrées de la base
 | Symfony | `make console ARGS="about"`, `make composer ARGS="…"`, `make cache-clear`, `make assets-compile` |
 | Base | `make db-validate`, `make db-status`, `make db-sql`, `make db-update`, `make db-update-dev`, `make dev-data`, `make db-history`, `make db-shell` |
 | Qualité | `make style`, `make style-fix`, `make analyse-statique`, `make doctrine-validate` |
-| Tests | `make test`, `make test-db-reset`, `make test-accessibility`, `make test-e2e`, `make production-smoke` |
+| Tests | `make test`, `make test-db-reset`, `make test-accessibility`, `make test-e2e`, `make test-recette` (recette déployée, hors CI), `make production-smoke` |
 | Livraison | `make prod-config`, `make release-config`, `make release-verify`, `make release-db-status` |
 | Exploitation | `make backup-now`, `make backup-restore-test`, `make maintenance-now`, `make db-performance-report` |
 | Destructif (accord requis) | `make reset`, `make prod-db-roles-finalize` |
@@ -61,7 +61,7 @@ scout-market/
 │  └─ tests/                 PHPUnit
 ├─ database/changelog/       Liquibase : V001…V006 à la racine + master
 ├─ docker/                   images php, nginx, postgres, liquibase (+ maintenance.sh)
-├─ tests/                    Playwright : accessibility/, e2e/, infrastructure/
+├─ tests/                    Playwright : accessibility/, e2e/, recette/, infrastructure/
 ├─ scripts/                  CI, smoke test, jeu de données de recette, vérification des images
 ├─ compose*.yaml             dev, production, livraison par images (release)
 └─ Makefile                  point d'entrée des commandes
@@ -108,6 +108,7 @@ scout-market/
 | Cloisonnement | PHPUnit (tests fonctionnels) | `make test` | L'accès aux données change |
 | Accessibilité | Playwright + Axe | `make test-accessibility` | L'interface change |
 | Parcours | Playwright | `make test-e2e` | Un parcours change |
+| Parcours sur la recette déployée | Playwright | `make test-recette` | Avant promotion en production (à la main, jamais en CI) |
 | Configuration de production | Compose | `make production-smoke` | Compose ou images changent |
 
 ## 09 Flux et frontières de sécurité

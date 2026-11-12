@@ -77,3 +77,19 @@ branche ──PR──▶ CI ──squash──▶ main ──▶ PR Release Ple
   le `GITHUB_TOKEN` natif publie les images. Détail et droits minimaux : `GITHUB_SETUP.md`.
 - Sauvegardes chiffrées avec une clé publique ; la clé privée reste hors des serveurs et des archives.
 - Ne documenter que des noms de variables, jamais de valeurs.
+
+## 07 Parcours sur la recette déployée
+
+- `make test-recette` (`npm run test:recette`, dossier `tests/recette/`) rejoue des parcours connectés sur la recette : lecture des pages principales (tableau de bord, denrées, fournisseurs, recettes, menus, unités, stocks, utilisateurs, commande, distribution, profil), ouverture sans enregistrement des formulaires d'édition à sous-collections (denrée, fournisseur, recette, unité, utilisateur, grille de menus), puis création, modification et annulation d'un mouvement de stock, et déconnexion.
+- Lancée à la main par `verificateur` en mode recette avant une promotion ; jamais en production, jamais en CI, et hors `test:e2e` / `test:accessibility` (suites distinctes, `testDir` différent, absentes de `scripts/run-playwright-ci.sh` et de la CI).
+- Variables obligatoires, sans valeur par défaut : `RECETTE_URL`, `RECETTE_EMAIL`, `RECETTE_MOT_DE_PASSE`. L'URL doit être en HTTPS et son nom d'hôte contenir le segment `recette` (délimité par `.`, `-` ou le bord du nom ; `recettes-…` est refusé) ; la suite refuse aussi de démarrer si `CI` est défini. Ni trace, ni vidéo, ni capture d'écran (elles enregistreraient le mot de passe ou des données de la recette). En cas d'échec, Playwright écrit tout de même `test-results/recette/**/error-context.md` : la suite supprime l'instantané de page entière (`PLAYWRIGHT_NO_COPY_PROMPT`), mais le fichier garde le message d'erreur et l'extrait ARIA de l'élément testé. Ne pas le partager hors de la machine.
+- Compte de contrôle : un utilisateur `ROLE_ADMIN` dédié, créé à la main en recette (jamais via les changesets de développement), sans changement de mot de passe imposé à la connexion. Il ne sert qu'à cette suite.
+- Son mot de passe reste hors dépôt, dans le trousseau macOS (service `scout-market-recette-controle`) :
+
+```bash
+security add-generic-password -a "$RECETTE_EMAIL" -s scout-market-recette-controle -w
+RECETTE_MOT_DE_PASSE="$(security find-generic-password -a "$RECETTE_EMAIL" -s scout-market-recette-controle -w)" make test-recette
+```
+
+- Prérequis : le jeu de données de recette est chargé (au moins une denrée active avec un conditionnement, un fournisseur, une recette, une unité et une grille de menus) et l'origine de mouvement « Correction manuelle » (code `CORRECTION`) est présente, ce que fournit la migration initiale.
+- La suite **écrit puis nettoie** : un mouvement de stock ne se supprime pas, il s'annule. Elle relève les mouvements actifs avant le test, crée une entrée « Correction manuelle » d'une denrée, la modifie, puis l'annule avec un motif portant le repère « Contrôle recette automatique ». Le nettoyage, exécuté même après un échec, n'annule que le mouvement de contrôle créé par le test. Si l'échec survient avant son identification, un nouveau mouvement n'est annulé que si sa page de confirmation indique « Entrée · Correction manuelle » ; tout autre nouveau mouvement reste en place et fait échouer le test. Il vérifie ensuite qu'il ne reste aucun mouvement de contrôle actif. Le mouvement annulé et son historique d'audit restent en recette : c'est attendu. Ne pas utiliser la recette pendant l'exécution (l'entrée de contrôle modifie brièvement le stock de la denrée choisie).
