@@ -2,6 +2,18 @@
 
 set -eu
 
+# Usage : charger-jeu-donnees-recette.sh [AAAA-MM-JJ]
+# Sans argument, les grilles commencent au jour calendaire de Paris.
+date_debut=${1:-}
+case "$date_debut" in
+    '') ;;
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+    *)
+        echo "Date de début invalide : attendu AAAA-MM-JJ." >&2
+        exit 1
+        ;;
+esac
+
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 sql_file="$script_dir/recette/charger-jeu-donnees.sql"
 container=${SCOUT_MARKET_RECETTE_DB_CONTAINER:-scout-market-recette-database-1}
@@ -22,19 +34,23 @@ project=$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.p
     exit 1
 }
 
-docker exec -i "$container" sh -ec '
-    PGPASSWORD="$POSTGRES_HEALTHCHECK_PASSWORD" exec psql \
+# Le compte applicatif a les droits de lecture et d'écriture sur les données du
+# schéma, sans droit de structure ; le compte de supervision n'en a aucun.
+docker exec -i -e DATE_DEBUT="$date_debut" "$container" sh -ec '
+    if [ -n "$DATE_DEBUT" ]; then set -- --set=date_debut="$DATE_DEBUT"; fi
+    PGPASSWORD="$POSTGRES_APP_PASSWORD" exec psql \
         --host=127.0.0.1 \
-        --username="$POSTGRES_HEALTHCHECK_USER" \
+        --username="$POSTGRES_APP_USER" \
         --dbname="$POSTGRES_DB" \
         --set=ON_ERROR_STOP=1 \
-        --single-transaction
+        --single-transaction \
+        "$@"
 ' <"$sql_file"
 
 docker exec "$container" sh -ec '
-    PGPASSWORD="$POSTGRES_HEALTHCHECK_PASSWORD" exec psql \
+    PGPASSWORD="$POSTGRES_APP_PASSWORD" exec psql \
         --host=127.0.0.1 \
-        --username="$POSTGRES_HEALTHCHECK_USER" \
+        --username="$POSTGRES_APP_USER" \
         --dbname="$POSTGRES_DB" \
         --no-align \
         --field-separator=" | " \
