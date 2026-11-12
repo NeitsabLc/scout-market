@@ -37,7 +37,11 @@ Public : équipe d'intendance et responsables d'unité. Règles détaillées : [
 - [ ] Langues : code, tables, documentation, interface et commits en français (exception notée dans `decisions.md`).
 - [ ] Dépôt public : aucun détail d'infrastructure (IP, machines, domaines privés, chemins locaux)
       ni aucune faille de sécurité connue (uniquement dans `etat.md` §04, non versionné).
-- [ ] Répondre en français ; ne jamais fusionner sans accord explicite.
+- [ ] Répondre en français.
+- [ ] Fusion (squash) autorisée sans nouvel accord, une PR à la fois, à jour sur `main` et CI verte :
+      après les contrôles de §08 et relecture du diff final pour nos PR, sur CI verte seule pour Dependabot.
+      CI rouge : corriger ou prévenir, ne pas fusionner. La PR Release Please (version, déploiement en recette)
+      ne se fusionne que sur accord explicite.
 - [ ] Commit uniquement quand le travail est terminé et que toutes les questions posées ont reçu une réponse.
 - [ ] Push autorisé sans nouvel accord une fois la fonctionnalité et le développement validés, après les contrôles de §08.
 
