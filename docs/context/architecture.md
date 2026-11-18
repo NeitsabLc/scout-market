@@ -108,7 +108,7 @@ scout-market/
 | Cloisonnement | PHPUnit (tests fonctionnels) | `make test` | L'accès aux données change |
 | Accessibilité | Playwright + Axe | `make test-accessibility` | L'interface change |
 | Parcours | Playwright | `make test-e2e` | Un parcours change |
-| Parcours sur la recette déployée | Playwright | `make test-recette` | Avant promotion en production (à la main, jamais en CI) |
+| Parcours sur la recette déployée | Playwright | `make test-recette` | Avant promotion en production (par `verificateur` mode recette, jamais en CI) |
 | Configuration de production | Compose | `make production-smoke` | Compose ou images changent |
 
 ## 09 Flux et frontières de sécurité
