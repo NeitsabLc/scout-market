@@ -48,3 +48,7 @@ scripts/supprimer-mouvements-stock-sejour.sh
 # Mémoire de travail locale (non publiée)
 /docs/context/etat.md
 /outputs/
+
+# Python
+__pycache__/
+*.py[cod]
