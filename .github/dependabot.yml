@@ -5,6 +5,8 @@ updates:
     directory: /app
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     target-branch: main
     commit-message:
       prefix: "fix"
@@ -21,6 +23,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     target-branch: main
     commit-message:
       prefix: "fix"
@@ -39,6 +43,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     target-branch: main
     commit-message:
       prefix: "fix"
@@ -55,6 +61,8 @@ updates:
     directory: /docker/php
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     target-branch: main
     commit-message:
       prefix: "fix"
@@ -64,6 +72,8 @@ updates:
     directory: /docker/postgres
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     target-branch: main
     commit-message:
       prefix: "fix"
@@ -73,6 +83,8 @@ updates:
     directory: /docker/liquibase
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     target-branch: main
     commit-message:
       prefix: "fix"
